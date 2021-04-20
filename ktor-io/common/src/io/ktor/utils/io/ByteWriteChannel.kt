@@ -167,7 +167,7 @@ public fun ByteWriteChannel.close(): Boolean = close(null)
 
 public suspend fun ByteWriteChannel.writeStringUtf8(s: CharSequence) {
     val packet = buildPacket {
-        writeStringUtf8(s)
+        writeText(s)
     }
 
     return writePacket(packet)
