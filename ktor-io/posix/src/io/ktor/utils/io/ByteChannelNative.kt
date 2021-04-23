@@ -144,11 +144,11 @@ internal class ByteChannelNative(
         }
     }
 
-    override suspend fun writeFully(src: CPointer<ByteVar>, offset: Int, length: Int) {
+    internal suspend fun writeFully(src: CPointer<ByteVar>, offset: Int, length: Int) {
         return writeFully(src, offset.toLong(), length.toLong())
     }
 
-    override suspend fun writeFully(src: CPointer<ByteVar>, offset: Long, length: Long) {
+    internal suspend fun writeFully(src: CPointer<ByteVar>, offset: Long, length: Long) {
         if (availableForWrite > 0) {
             val size = tryWriteCPointer(src, offset, length).toLong()
 
@@ -179,11 +179,11 @@ internal class ByteChannelNative(
         }
     }
 
-    override suspend fun writeAvailable(src: CPointer<ByteVar>, offset: Int, length: Int): Int {
+    internal suspend fun writeAvailable(src: CPointer<ByteVar>, offset: Int, length: Int): Int {
         return writeAvailable(src, offset.toLong(), length.toLong())
     }
 
-    override suspend fun writeAvailable(src: CPointer<ByteVar>, offset: Long, length: Long): Int {
+    internal suspend fun writeAvailable(src: CPointer<ByteVar>, offset: Long, length: Long): Int {
         if (availableForWrite > 0) {
             val size = tryWriteCPointer(src, offset, length)
             afterWrite(size)

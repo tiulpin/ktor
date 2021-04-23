@@ -1028,7 +1028,7 @@ internal open class ByteBufferChannel(
         writeSuspend(1)
     }
 
-    override suspend fun writeAvailable(src: ByteBuffer): Int {
+    internal suspend fun writeAvailable(src: ByteBuffer): Int {
         joining?.let { resolveDelegation(this, it)?.let { return it.writeAvailable(src) } }
 
         val copied = writeAsMuchAsPossible(src)
@@ -1064,7 +1064,7 @@ internal open class ByteBufferChannel(
         return writeAvailable(src)
     }
 
-    override suspend fun writeFully(src: ByteBuffer) {
+    internal suspend fun writeFully(src: ByteBuffer) {
         joining?.let { resolveDelegation(this, it)?.let { return it.writeFully(src) } }
 
         writeAsMuchAsPossible(src)
@@ -1427,7 +1427,7 @@ internal open class ByteBufferChannel(
         }
     }
 
-    override fun writeAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
+    internal fun writeAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
         require(min > 0) { "min should be positive" }
         require(min <= BYTE_BUFFER_CAPACITY) { "Min($min) shouldn't be greater than $BYTE_BUFFER_CAPACITY" }
 
@@ -1476,7 +1476,7 @@ internal open class ByteBufferChannel(
         return result
     }
 
-    override suspend fun write(min: Int, block: (ByteBuffer) -> Unit) {
+    internal suspend fun write(min: Int, block: (ByteBuffer) -> Unit) {
         require(min > 0) { "min should be positive" }
         require(min <= BYTE_BUFFER_CAPACITY) { "Min($min) should'nt be greater than ($BYTE_BUFFER_CAPACITY)" }
 
@@ -1495,7 +1495,7 @@ internal open class ByteBufferChannel(
         joining?.let { resolveDelegation(this, it)?.let { return it.write(min, block) } }
     }
 
-    override suspend fun writeWhile(block: (ByteBuffer) -> Boolean) {
+    internal suspend fun writeWhile(block: (ByteBuffer) -> Boolean) {
         if (!writeWhileNoSuspend(block)) return
         closed?.let { rethrowClosed(it.sendException) }
         return writeWhileSuspend(block)
