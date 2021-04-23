@@ -90,7 +90,7 @@ internal class ByteChannelJS(initial: ChunkBuffer, autoFlush: Boolean) : ByteCha
         }
     }
 
-    override suspend fun readAvailable(dst: ArrayBuffer, offset: Int, length: Int): Int {
+    internal suspend fun readAvailable(dst: ArrayBuffer, offset: Int, length: Int): Int {
         return if (readable.isEmpty) {
             readAvailableSuspend(dst, offset, length)
         } else {
@@ -104,7 +104,7 @@ internal class ByteChannelJS(initial: ChunkBuffer, autoFlush: Boolean) : ByteCha
         return readAvailable(dst, offset, length)
     }
 
-    override suspend fun readFully(dst: ArrayBuffer, offset: Int, length: Int) {
+    internal suspend fun readFully(dst: ArrayBuffer, offset: Int, length: Int) {
         if (availableForRead >= length) {
             closedCause?.let { throw it }
             readable.readFully(dst, offset, length)

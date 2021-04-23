@@ -79,14 +79,14 @@ public class ByteChannelSequentialJVM(
         }
     }
 
-    override suspend fun readAvailable(dst: ByteBuffer): Int {
+    internal suspend fun readAvailable(dst: ByteBuffer): Int {
         val rc = tryReadAvailable(dst)
         if (rc != 0) return rc
         if (!dst.hasRemaining()) return 0
         return readAvailableSuspend(dst)
     }
 
-    override fun readAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
+    internal fun readAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
         if (closed) {
             throw closedCause ?: ClosedSendChannelException("Channel closed for read")
         }
@@ -112,7 +112,7 @@ public class ByteChannelSequentialJVM(
         return readAvailable(dst)
     }
 
-    override suspend fun readFully(dst: ByteBuffer): Int {
+    internal suspend fun readFully(dst: ByteBuffer): Int {
         val rc = tryReadAvailable(dst)
         if (rc == -1) throw EOFException("Channel closed")
         if (!dst.hasRemaining()) return rc
@@ -154,7 +154,7 @@ public class ByteChannelSequentialJVM(
     }
 
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    override suspend fun consumeEachBufferRange(visitor: ConsumeEachBufferVisitor) {
+    internal suspend fun consumeEachBufferRange(visitor: ConsumeEachBufferVisitor) {
         val readable = readable
         var invokedWithLast = false
 
@@ -174,15 +174,15 @@ public class ByteChannelSequentialJVM(
         }
     }
 
-    override fun <R> lookAhead(visitor: LookAheadSession.() -> R): R {
+    internal fun <R> lookAhead(visitor: LookAheadSession.() -> R): R {
         TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun <R> lookAheadSuspend(visitor: suspend LookAheadSuspendSession.() -> R): R {
+    internal suspend fun <R> lookAheadSuspend(visitor: suspend LookAheadSuspendSession.() -> R): R {
         TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun read(min: Int, consumer: (ByteBuffer) -> Unit) {
+    internal suspend fun read(min: Int, consumer: (ByteBuffer) -> Unit) {
         require(min >= 0)
 
         if (!await(min)) throw EOFException("Channel closed while $min bytes expected")

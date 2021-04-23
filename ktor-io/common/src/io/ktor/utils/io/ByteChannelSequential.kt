@@ -804,6 +804,10 @@ public abstract class ByteChannelSequentialBase(
         }
     }
 
+    override suspend fun awaitContent() {
+        awaitAtLeastNBytesAvailableForRead(1)
+    }
+
     override suspend fun awaitFreeSpace() {
         flush()
         awaitAtLeastNBytesAvailableForWrite(1)

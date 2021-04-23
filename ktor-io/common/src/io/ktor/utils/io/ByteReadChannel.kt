@@ -3,6 +3,7 @@ package io.ktor.utils.io
 import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
+import kotlin.native.concurrent.*
 
 /**
  * Channel for asynchronous reading of sequences of bytes.
@@ -10,7 +11,7 @@ import io.ktor.utils.io.core.internal.*
  *
  * Operations on this channel cannot be invoked concurrently.
  */
-public expect interface ByteReadChannel {
+public interface ByteReadChannel {
     /**
      * Returns number of bytes that can be read without suspension. Read operations do no suspend and return
      * immediately when this number is at least the number of bytes requested for read.
@@ -30,6 +31,8 @@ public expect interface ByteReadChannel {
      * It is not guaranteed to be atomic so could be updated in the middle of long running read operation.
      */
     public val totalBytesRead: Long
+
+    public suspend fun awaitContent()
 
     /**
      * Reads all available bytes to [dst] buffer and returns immediately or suspends if no bytes available
@@ -182,7 +185,9 @@ public expect interface ByteReadChannel {
     ): Long
 
     public companion object {
-        public val Empty: ByteReadChannel
+        public val Empty: ByteReadChannel = ByteChannel().apply {
+            close()
+        }
     }
 }
 

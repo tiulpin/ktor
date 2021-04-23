@@ -79,11 +79,11 @@ internal class ByteChannelNative(
         }
     }
 
-    override suspend fun readAvailable(dst: CPointer<ByteVar>, offset: Int, length: Int): Int {
+    internal suspend fun readAvailable(dst: CPointer<ByteVar>, offset: Int, length: Int): Int {
         return readAvailable(dst, offset.toLong(), length.toLong())
     }
 
-    override suspend fun readAvailable(dst: CPointer<ByteVar>, offset: Long, length: Long): Int {
+    internal suspend fun readAvailable(dst: CPointer<ByteVar>, offset: Long, length: Long): Int {
         require(offset >= 0L)
         require(length >= 0L)
 
@@ -105,11 +105,11 @@ internal class ByteChannelNative(
         return readAvailable(dst, offset, length)
     }
 
-    override suspend fun readFully(dst: CPointer<ByteVar>, offset: Int, length: Int) {
+    internal suspend fun readFully(dst: CPointer<ByteVar>, offset: Int, length: Int) {
         return readFully(dst, offset.toLong(), length.toLong())
     }
 
-    override suspend fun readFully(dst: CPointer<ByteVar>, offset: Long, length: Long) {
+    internal suspend fun readFully(dst: CPointer<ByteVar>, offset: Long, length: Long) {
         require(offset >= 0L)
         require(length >= 0L)
 

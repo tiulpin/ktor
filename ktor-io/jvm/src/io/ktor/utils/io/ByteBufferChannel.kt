@@ -556,7 +556,7 @@ internal open class ByteBufferChannel(
         }
     }
 
-    final override suspend fun readFully(dst: ByteBuffer): Int {
+    internal suspend fun readFully(dst: ByteBuffer): Int {
         val rc = readAsMuchAsPossible(dst)
         if (!dst.hasRemaining()) return rc
 
@@ -614,7 +614,7 @@ internal open class ByteBufferChannel(
         } while (consumed < currentLength)
     }
 
-    override fun readAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
+    internal fun readAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
         require(min > 0) { "min should be positive" }
         require(min <= BYTE_BUFFER_CAPACITY) { "Min($min) shouldn't be greater than $BYTE_BUFFER_CAPACITY" }
 
@@ -672,7 +672,7 @@ internal open class ByteBufferChannel(
         }
     }
 
-    override suspend fun readAvailable(dst: ByteBuffer): Int {
+    internal suspend fun readAvailable(dst: ByteBuffer): Int {
         val consumed = readAsMuchAsPossible(dst)
 
         return when {
@@ -1616,7 +1616,7 @@ internal open class ByteBufferChannel(
         }
     }
 
-    override suspend fun read(min: Int, consumer: (ByteBuffer) -> Unit) {
+    internal suspend fun read(min: Int, consumer: (ByteBuffer) -> Unit) {
         require(min >= 0) { "min should be positive or zero" }
 
         val read = reading {
@@ -1752,12 +1752,12 @@ internal open class ByteBufferChannel(
      * even if there are remaining bytes and visitor returned true.
      */
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    final override suspend fun consumeEachBufferRange(visitor: (buffer: ByteBuffer, last: Boolean) -> Boolean) {
+    internal suspend fun consumeEachBufferRange(visitor: (buffer: ByteBuffer, last: Boolean) -> Boolean) {
         if (consumeEachBufferRangeFast(false, visitor)) return
         return consumeEachBufferRangeSuspend(visitor)
     }
 
-    override fun <R> lookAhead(visitor: LookAheadSession.() -> R): R {
+    internal fun <R> lookAhead(visitor: LookAheadSession.() -> R): R {
         if (state === ReadWriteBufferState.Terminated) {
             return visitor(TerminatedLookAhead)
         }
@@ -1775,7 +1775,7 @@ internal open class ByteBufferChannel(
         return result!!
     }
 
-    override suspend fun <R> lookAheadSuspend(visitor: suspend LookAheadSuspendSession.() -> R): R {
+    internal suspend fun <R> lookAheadSuspend(visitor: suspend LookAheadSuspendSession.() -> R): R {
         if (state === ReadWriteBufferState.Terminated) {
             return visitor(TerminatedLookAhead)
         }
