@@ -5,8 +5,8 @@
 package io.ktor.server.cio.backend
 
 import io.ktor.util.*
+import io.ktor.util.network.*
 import io.ktor.utils.io.*
-import java.net.*
 
 /**
  * Represents a server incoming connection. Usually it is a TCP connection but potentially could be other transport.
@@ -15,10 +15,20 @@ import java.net.*
  * @property remoteAddress of the client (optional)
  * @property localAddress on which the client was accepted (optional)
  */
-@InternalAPI
+@InternalAPI //TODO this should be moved to ktor-server-cio + made internal
 public class ServerIncomingConnection(
     public val input: ByteReadChannel,
     public val output: ByteWriteChannel,
-    public val remoteAddress: SocketAddress?,
-    public val localAddress: SocketAddress?
-)
+    public val remoteAddress: NetworkAddress?,
+    public val localAddress: NetworkAddress?
+) {
+    @Deprecated(
+        "Specify localAddress as well.",
+        level = DeprecationLevel.HIDDEN
+    )
+    public constructor(
+        input: ByteReadChannel,
+        output: ByteWriteChannel,
+        remoteAddress: NetworkAddress?
+    ) : this(input, output, remoteAddress, null)
+}
