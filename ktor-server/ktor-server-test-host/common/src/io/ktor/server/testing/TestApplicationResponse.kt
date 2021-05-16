@@ -11,6 +11,10 @@ import io.ktor.response.*
 import io.ktor.server.engine.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.charsets.*
+import io.ktor.utils.io.concurrent.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
@@ -29,25 +33,26 @@ public class TestApplicationResponse(
     val content: String?
         get() {
             val charset = headers[HttpHeaders.ContentType]?.let { ContentType.parse(it).charset() } ?: Charsets.UTF_8
-            return byteContent?.toString(charset)
+            return byteContent?.let { String(bytes = it, charset = charset) }
         }
 
     /**
      * Response body byte content. Could be blocking. Remains `null` until response appears.
      */
-    var byteContent: ByteArray? = null
+    private var _byteContent: ByteArray? by shared(null)
+    var byteContent: ByteArray?
         get() = when {
-            field != null -> field
+            _byteContent != null -> _byteContent
             responseChannel == null -> null
-            else -> runBlocking { responseChannel!!.toByteArray() }
+            else -> blockingCall { responseChannel!!.toByteArray() } //TODO
         }
-        private set
+        private set(value) {
+            _byteContent = value
+        }
 
-    @Volatile
-    private var responseChannel: ByteReadChannel? = null
+    private var responseChannel: ByteReadChannel? by atomic(null)
 
-    @Volatile
-    private var responseJob: Job? = null
+    private var responseJob: Job? by atomic(null)
 
     /**
      * Get completed when a response channel is assigned.
@@ -127,14 +132,10 @@ public class TestApplicationResponse(
     /**
      * Wait for websocket session completion
      */
-    public fun awaitWebSocket(durationMillis: Long): Unit = runBlocking {
-        withTimeout(durationMillis) {
-            responseChannelDeferred.join()
-            responseJob?.join()
-            webSocketCompleted.join()
-        }
-
-        Unit
+    public suspend fun awaitWebSocket(durationMillis: Long): Unit = withTimeout(durationMillis) {
+        responseChannelDeferred.join()
+        responseJob?.join()
+        webSocketCompleted.join()
     }
 
     /**
