@@ -19,7 +19,7 @@ public interface ApplicationEngine {
         /**
          * Provides currently available parallelism, e.g. number of available processors
          */
-        public val parallelism: Int = Runtime.getRuntime().availableProcessors()
+        public val parallelism: Int = availableProcessors()
 
         /**
          * Specifies size of the event group for accepting connections
