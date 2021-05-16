@@ -8,6 +8,7 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import io.ktor.test.dispatcher.*
 import io.ktor.util.*
 import kotlin.test.*
 
@@ -175,7 +176,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithApplication() {
+    fun testWithApplication() = testSuspend {
         withTestApplication {
             application.intercept(ApplicationCallPipeline.Call) {
                 assertEquals("http://my-host/path%20/to?p=v", call.url())
@@ -196,7 +197,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithApplication2() {
+    fun testWithApplication2() = testSuspend {
         withTestApplication {
             application.intercept(ApplicationCallPipeline.Call) {
                 repeat(3) {
@@ -211,7 +212,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithApplicationAndPort() {
+    fun testWithApplicationAndPort() = testSuspend {
         withTestApplication {
             application.intercept(ApplicationCallPipeline.Call) {
                 assertEquals("http://my-host:8080/path%20/to?p=v", call.url())
@@ -233,7 +234,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithProxy() {
+    fun testWithProxy() = testSuspend {
         withTestApplication {
             application.install(XForwardedHeaderSupport)
             application.intercept(ApplicationCallPipeline.Call) {
@@ -247,7 +248,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithProxyHttps() {
+    fun testWithProxyHttps() = testSuspend {
         withTestApplication {
             application.install(XForwardedHeaderSupport)
             application.intercept(ApplicationCallPipeline.Call) {
@@ -262,7 +263,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithProxyHttpsDefaultPort() {
+    fun testWithProxyHttpsDefaultPort() = testSuspend {
         withTestApplication {
             application.install(XForwardedHeaderSupport)
             application.intercept(ApplicationCallPipeline.Call) {
@@ -277,7 +278,7 @@ class URLBuilderTest {
     }
 
     @Test
-    fun testWithProxyHttpsWithPortEqualToDefault() {
+    fun testWithProxyHttpsWithPortEqualToDefault() = testSuspend {
         withTestApplication {
             application.install(XForwardedHeaderSupport)
             application.intercept(ApplicationCallPipeline.Call) {

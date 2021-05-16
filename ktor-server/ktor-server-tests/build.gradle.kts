@@ -1,10 +1,11 @@
 description = ""
 
 kotlin.sourceSets {
-    val jvmMain by getting {
+    val commonMain by getting {
         dependencies {
             api(project(":ktor-server:ktor-server-core"))
             api(project(":ktor-server:ktor-server-test-host"))
+            api(project(":ktor-test-dispatcher"))
         }
     }
     val jvmTest by getting {
