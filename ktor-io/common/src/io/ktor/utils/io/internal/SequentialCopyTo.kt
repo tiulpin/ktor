@@ -1,8 +1,8 @@
 package io.ktor.utils.io.internal
 
-import io.ktor.utils.io.ByteChannelSequentialBase
-import io.ktor.utils.io.close
-import io.ktor.utils.io.core.internal.ChunkBuffer
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.internal.*
+import kotlinx.coroutines.*
 
 internal suspend fun ByteChannelSequentialBase.joinToImpl(dst: ByteChannelSequentialBase, closeOnEnd: Boolean) {
     copyToSequentialImpl(dst, Long.MAX_VALUE)
@@ -16,38 +16,55 @@ internal suspend fun ByteChannelSequentialBase.joinToImpl(dst: ByteChannelSequen
  */
 internal suspend fun ByteChannelSequentialBase.copyToSequentialImpl(dst: ByteChannelSequentialBase, limit: Long): Long {
     require(this !== dst)
+
+    val copyJob = Job()
+    attachJob(copyJob)
+    dst.attachJob(copyJob)
+
     if (closedCause != null) {
         dst.close(closedCause)
         return 0L
     }
 
-    var remainingLimit = limit
+    return try {
+        var remainingLimit = limit
 
-    while (remainingLimit > 0) {
-        if (!awaitInternalAtLeast1()) {
-            break
-        }
-        val transferred = transferTo(dst, remainingLimit)
-
-        val copied = if (transferred == 0L) {
-            val tail = copyToTail(dst, remainingLimit)
-            if (tail == 0L) {
+        while (remainingLimit > 0) {
+            if (!awaitInternalAtLeast1()) {
                 break
             }
+            val transferred = transferTo(dst, remainingLimit)
 
-            tail
-        } else {
-            if (dst.availableForWrite == 0) {
-                dst.awaitAtLeastNBytesAvailableForWrite(1)
+            val copied = if (transferred == 0L) {
+                val tail = copyToTail(dst, remainingLimit)
+                if (tail == 0L) {
+                    break
+                }
+
+                tail
+            } else {
+                if (dst.availableForWrite == 0) {
+                    dst.awaitAtLeastNBytesAvailableForWrite(1)
+                }
+
+                transferred
             }
 
-            transferred
+            remainingLimit -= copied
         }
 
-        remainingLimit -= copied
-    }
+        flush()
+        limit - remainingLimit
+    } catch (cause: Throwable) {
+        if (closedCause == null) {
+            close(cause)
+        }
 
-    return limit - remainingLimit
+        if (dst.closedCause == null) {
+            dst.cancel(cause)
+        }
+        throw cause
+    }
 }
 
 private suspend fun ByteChannelSequentialBase.copyToTail(dst: ByteChannelSequentialBase, limit: Long): Long {

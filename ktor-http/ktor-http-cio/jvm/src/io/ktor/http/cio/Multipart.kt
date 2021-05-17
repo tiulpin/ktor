@@ -4,8 +4,8 @@
 
 package io.ktor.http.cio
 
-import io.ktor.http.cio.internals.*
 import io.ktor.network.util.*
+import io.ktor.http.cio.internals.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*

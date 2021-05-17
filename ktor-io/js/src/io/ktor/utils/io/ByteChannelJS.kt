@@ -3,7 +3,6 @@ package io.ktor.utils.io
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.internal.*
-import kotlinx.coroutines.*
 import org.khronos.webgl.*
 
 /**
@@ -76,19 +75,6 @@ public actual suspend fun ByteReadChannel.copyTo(dst: ByteWriteChannel, limit: L
 }
 
 internal class ByteChannelJS(initial: ChunkBuffer, autoFlush: Boolean) : ByteChannelSequentialBase(initial, autoFlush) {
-    private var attachedJob: Job? = null
-
-    @OptIn(InternalCoroutinesApi::class)
-    override fun attachJob(job: Job) {
-        attachedJob?.cancel()
-        attachedJob = job
-        job.invokeOnCompletion(onCancelling = true) { cause ->
-            attachedJob = null
-            if (cause != null) {
-                cancel(cause)
-            }
-        }
-    }
 
     override suspend fun readAvailable(dst: ArrayBuffer, offset: Int, length: Int): Int {
         return if (readable.isEmpty) {
@@ -127,5 +113,5 @@ internal class ByteChannelJS(initial: ChunkBuffer, autoFlush: Boolean) : ByteCha
         }
     }
 
-    override fun toString(): String = "ByteChannel[$attachedJob, ${hashCode()}]"
+    override fun toString(): String = "ByteChannel[${hashCode()}]"
 }

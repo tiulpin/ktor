@@ -20,6 +20,7 @@ import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.debug.*
 import org.junit.*
 import org.junit.Assert.*
 import java.io.*
@@ -441,6 +442,7 @@ abstract class ContentTestSuite<TEngine : ApplicationEngine, TConfiguration : Ap
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.DelicateCoroutinesApi::class)
     @Test
     fun testStaticServeFromDir() {
         val targetClasses = listOf(File(classesDir), File(coreClassesDir))

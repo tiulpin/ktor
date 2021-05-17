@@ -72,8 +72,8 @@ public fun CoroutineScope.startConnectionPipeline(
         upgraded: CompletableDeferred<Boolean>?
     ) -> Unit
 ): Job {
-    val pipeline = ServerIncomingConnection(input, output, null, null)
-    return startServerConnectionPipeline(pipeline, timeout) { request ->
+    val connectionPipeline = ServerIncomingConnection(input, output, null, null)
+    return startServerConnectionPipeline(connectionPipeline, timeout) { request ->
         handler(this, request, input, output, upgraded)
     }
 }

@@ -666,7 +666,8 @@ internal open class ByteBufferChannel(
         return when {
             consumed == 0 && closed != null -> {
                 if (state.capacity.flush()) {
-                    readAsMuchAsPossible(dst, offset, length)
+                    val result = readAsMuchAsPossible(dst, offset, length)
+                    return if (result > 0) result else -1
                 } else {
                     -1
                 }
@@ -1618,7 +1619,7 @@ internal open class ByteBufferChannel(
     }
 
     override suspend fun read(min: Int, consumer: (ByteBuffer) -> Unit) {
-        require(min >= 0) { "min should be positive or zero" }
+        require(min > 0) { "Min should be positive" }
 
         val read = reading {
             val av = it.availableForRead

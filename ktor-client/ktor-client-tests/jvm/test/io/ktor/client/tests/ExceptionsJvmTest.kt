@@ -9,6 +9,7 @@ import io.ktor.client.engine.apache.*
 import io.ktor.client.request.*
 import io.ktor.client.tests.utils.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.debug.junit4.*
 import org.apache.http.*
 import org.junit.*
 import java.net.*
@@ -16,6 +17,9 @@ import kotlin.io.use
 
 @Suppress("BlockingMethodInNonBlockingContext", "ControlFlowWithEmptyBody")
 class ExceptionsJvmTest {
+
+    @get:Rule
+    val timeout = CoroutinesTimeout(60 * 1000L, true)
 
     @Test
     fun testConnectionCloseException(): Unit = runBlocking {

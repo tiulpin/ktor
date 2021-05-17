@@ -63,8 +63,8 @@ class DeflaterReadChannelTest : CoroutineScope {
         assertEquals(text, asyncOf(text).toInputStream().reader().readText())
 
         for (step in 1..text.length) {
-            testReadChannel(text, asyncOf(text))
-            testWriteChannel(text, asyncOf(text))
+            testReadChannel(text.take(step), asyncOf(text.take(step)))
+            testWriteChannel(text.take(step), asyncOf(text.take(step)))
         }
     }
 
@@ -115,7 +115,8 @@ class DeflaterReadChannelTest : CoroutineScope {
     private fun testWriteChannel(expected: String, src: ByteReadChannel) {
         val channel = ByteChannel()
         launch {
-            src.copyAndClose((channel as ByteWriteChannel).deflated())
+            val dst = (channel as ByteWriteChannel).deflated()
+            src.copyAndClose(dst)
         }
 
         val result = channel.toInputStream().ungzip().reader().readText()

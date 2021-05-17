@@ -48,7 +48,7 @@ internal fun startServer(): Closeable {
 /**
  * Start server for tests.
  */
-public fun main() {
+fun main() {
     val handler = startServer()
     try {
         while (!Thread.interrupted()) {
