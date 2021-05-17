@@ -5,7 +5,10 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.internal.*
 import io.ktor.utils.io.pool.*
+import kotlinx.atomicfu.*
 import kotlinx.atomicfu.locks.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
 import kotlin.math.*
 
 private const val EXPECTED_CAPACITY: Long = 4088L
@@ -22,11 +25,8 @@ public abstract class ByteChannelSequentialBase(
 
     private val state = ByteChannelSequentialBaseSharedState()
 
-    protected var closed: Boolean
-        get() = state.closed
-        set(value) {
-            state.closed = value
-        }
+    private val _closed: AtomicRef<ChannelClosedState?> = atomic(null)
+    protected val closed: Boolean get() = _closed.value != null
 
     protected val writable: BytePacketBuilder = BytePacketBuilder(0, pool)
     protected val readable: ByteReadPacket = ByteReadPacket(initial, pool)
@@ -66,26 +66,42 @@ public abstract class ByteChannelSequentialBase(
 
     override val totalBytesWritten: Long get() = state.totalBytesWritten
 
-    final override var closedCause: Throwable?
-        get() = state.closedCause
-        private set(value) {
-            state.closedCause = value
-        }
+    final override val closedCause: Throwable?
+        get() = _closed.value?.cause
 
     private val flushMutex = SynchronizedObject()
     private val flushBuffer: BytePacketBuilder = BytePacketBuilder()
+    private val channelJob = Job()
+
+    @OptIn(InternalCoroutinesApi::class)
+    override fun attachJob(job: Job) {
+        channelJob.invokeOnCompletion(onCancelling = true) { cause: Throwable? ->
+            if (cause == null) return@invokeOnCompletion
+            if (cause is CancellationException) {
+                job.cancel(cause)
+            } else {
+                job.cancel("Channel job is cancelled", cause)
+            }
+        }
+
+        job.invokeOnCompletion(onCancelling = true) { cause: Throwable? ->
+            cause ?: return@invokeOnCompletion
+            val unwrappedCause = if (cause is CancellationException && cause.cause != null) cause.cause else cause
+            cancel(unwrappedCause)
+        }
+    }
 
     internal suspend fun awaitAtLeastNBytesAvailableForWrite(count: Int) {
         while (availableForWrite < count && !closed) {
             if (!flushImpl()) {
-                slot.sleep()
+                slot.sleep { availableForWrite < count && !closed }
             }
         }
     }
 
     internal suspend fun awaitAtLeastNBytesAvailableForRead(count: Int) {
         while (availableForRead < count && !closed) {
-            slot.sleep()
+            slot.sleep { availableForRead < count && !closed }
         }
     }
 
@@ -110,7 +126,7 @@ public abstract class ByteChannelSequentialBase(
      */
     private fun flushWrittenBytes() {
         synchronized(flushMutex) {
-            val buffer = writable.stealAll()!!
+            val buffer = writable.stealAll() ?: return@synchronized
             flushBuffer.writeChunkBuffer(buffer)
         }
     }
@@ -320,7 +336,11 @@ public abstract class ByteChannelSequentialBase(
     }
 
     private suspend fun readShortSlow(): Short {
-        readNSlow(2) { return readable.readShort().also { afterRead(2) } }
+        readNSlow(2) {
+            val result = readable.readShort()
+            afterRead(2)
+            return result
+        }
     }
 
     protected fun afterRead(count: Int) {
@@ -450,7 +470,7 @@ public abstract class ByteChannelSequentialBase(
         return builder.build()
     }
 
-    protected fun readAvailableClosed(): Int {
+    private fun readAvailableClosed(): Int {
         closedCause?.let { throw it }
 
         if (availableForRead > 0) {
@@ -460,9 +480,7 @@ public abstract class ByteChannelSequentialBase(
         return -1
     }
 
-    override suspend fun readAvailable(dst: ChunkBuffer): Int = readAvailable(dst as Buffer)
-
-    internal suspend fun readAvailable(dst: Buffer): Int {
+    override suspend fun readAvailable(dst: ChunkBuffer): Int {
         closedCause?.let { throw it }
         if (closed && availableForRead == 0) return -1
 
@@ -522,6 +540,9 @@ public abstract class ByteChannelSequentialBase(
         val size = minOf(length.toLong(), readable.remaining).toInt()
         readable.readFully(dst, offset, size)
         afterRead(size)
+
+        closedCause?.let { throw it }
+        if (isClosedForRead && size == 0) return -1
         return size
     }
 
@@ -700,19 +721,16 @@ public abstract class ByteChannelSequentialBase(
 
     override suspend fun <A : Appendable> readUTF8LineTo(out: A, limit: Int): Boolean {
         if (isClosedForRead) {
-            val cause = closedCause
-            if (cause != null) {
-                throw cause
-            }
-
+            closedCause?.let { throw it }
             return false
         }
 
-        return decodeUTF8LineLoopSuspend(out, limit) { size ->
-            afterRead(size)
-            if (await(size)) readable
-            else null
-        }
+        val result = decodeUTF8LineLoopSuspend(out, limit, { size ->
+            if (await(size)) readable else null
+        }) { afterRead(it) }
+
+        closedCause?.let { throw it }
+        return result
     }
 
     override suspend fun readUTF8Line(limit: Int): String? {
@@ -733,9 +751,16 @@ public abstract class ByteChannelSequentialBase(
     }
 
     override fun close(cause: Throwable?): Boolean {
-        if (closed || closedCause != null) return false
-        closedCause = cause
-        closed = true
+        if (cause == null && !writable.isEmpty) {
+            /**
+             * It's important not to use [flush] here, because we're not going to resume slot.
+             **/
+            flushWrittenBytes()
+        }
+
+        val closedState = ChannelClosedState(cause)
+        if (!_closed.compareAndSet(null, closedState)) return false
+
         if (cause != null) {
             readable.release()
             writable.release()
@@ -745,19 +770,25 @@ public abstract class ByteChannelSequentialBase(
         }
 
         slot.cancel(cause)
+        cause?.let {
+            if (it is CancellationException) {
+                channelJob.cancel(it)
+            } else {
+                channelJob.cancel("Attached job was cancelled", it)
+            }
+        }
         return true
     }
 
     internal fun transferTo(dst: ByteChannelSequentialBase, limit: Long): Long {
         val size = readable.remaining
-        return if (size <= limit) {
-            dst.writable.writePacket(readable)
-            dst.afterWrite(size.toInt())
-            afterRead(size.toInt())
-            size
-        } else {
-            0
-        }
+        if (size > limit) return 0
+
+        dst.writable.writePacket(readable)
+        dst.afterWrite(size.toInt())
+        dst.flush()
+        afterRead(size.toInt())
+        return size
     }
 
     private suspend inline fun readNSlow(n: Int, block: () -> Nothing): Nothing {
@@ -822,4 +853,7 @@ public abstract class ByteChannelSequentialBase(
 
         return bytesCopied
     }
+
+    override fun toString(): String =
+        "ByteChannelSequential[${hashCode()}, read: $totalBytesRead, write: $totalBytesWritten]"
 }

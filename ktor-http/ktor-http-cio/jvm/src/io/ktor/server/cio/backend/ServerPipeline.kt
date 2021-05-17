@@ -42,6 +42,7 @@ public fun CoroutineScope.startServerConnectionPipeline(
             pipelineWriterLoop(channel, timeout, connection)
         } catch (t: Throwable) {
             connection.output.close(t)
+            connection.input.cancel(t)
         } finally {
             connection.output.close()
         }
@@ -53,8 +54,6 @@ public fun CoroutineScope.startServerConnectionPipeline(
         while (true) { // parse requests loop
             val request = try {
                 parseRequest(connection.input) ?: break
-            } catch (io: IOException) {
-                throw io
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (parseFailed: Throwable) { // try to write 400 Bad Request
@@ -195,7 +194,7 @@ private suspend fun pipelineWriterLoop(
     while (true) {
         val child = timeout.withTimeout(receiveChildOrNull) ?: break
         try {
-            child.joinTo(connection.output, false)
+            child.copyTo(connection.output)
             connection.output.flush()
         } catch (t: Throwable) {
             if (child is ByteWriteChannel) {

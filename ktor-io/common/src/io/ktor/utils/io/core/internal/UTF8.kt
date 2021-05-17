@@ -1,5 +1,6 @@
 package io.ktor.utils.io.core.internal
 
+import io.ktor.utils.io.*
 import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
@@ -24,7 +25,8 @@ internal inline fun Buffer.decodeASCII(consumer: (Char) -> Boolean): Boolean {
 internal suspend fun decodeUTF8LineLoopSuspend(
     out: Appendable,
     limit: Int,
-    nextChunk: suspend (Int) -> Input?
+    nextChunk: suspend (Int) -> Input?,
+    consumedCallback: (Int) -> Unit
 ): Boolean {
     var decoded = 0
     var size = 1
@@ -35,6 +37,7 @@ internal suspend fun decodeUTF8LineLoopSuspend(
         val chunk = nextChunk(size) ?: break
         chunk.takeWhileSize { buffer ->
             var skip = 0
+            val before = buffer.readRemaining
             size = buffer.decodeUTF8 { ch ->
                 when (ch) {
                     '\r' -> {
@@ -70,6 +73,8 @@ internal suspend fun decodeUTF8LineLoopSuspend(
                 buffer.discardExact(skip)
             }
 
+            val consumed = before - buffer.readRemaining
+            consumedCallback(consumed)
             size = if (end) 0 else size.coerceAtLeast(1)
 
             size

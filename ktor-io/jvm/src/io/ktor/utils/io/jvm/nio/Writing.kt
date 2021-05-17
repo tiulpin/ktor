@@ -19,33 +19,34 @@ public suspend fun ByteReadChannel.copyTo(channel: WritableByteChannel, limit: L
     if (isClosedForRead) return 0
 
     var copied = 0L
-    val copy = { bb: ByteBuffer ->
-        val rem = limit - copied
+    val copy: (ByteBuffer) -> Unit = copy@{ buffer: ByteBuffer ->
+        val bytesToCopy = limit - copied
 
-        if (rem < bb.remaining()) {
-            val l = bb.limit()
-            bb.limit(bb.position() + rem.toInt())
-
-            while (bb.hasRemaining()) {
-                channel.write(bb)
-            }
-
-            bb.limit(l)
-            copied += rem
-        } else {
+        if (bytesToCopy >= buffer.remaining()) {
             var written = 0L
-            while (bb.hasRemaining()) {
-                written += channel.write(bb)
+            while (buffer.hasRemaining()) {
+                written += channel.write(buffer)
             }
 
             copied += written
+            return@copy
         }
+        val currentLimit = buffer.limit()
+        buffer.limit(buffer.position() + bytesToCopy.toInt())
+
+        while (buffer.hasRemaining()) {
+            channel.write(buffer)
+        }
+
+        buffer.limit(currentLimit)
+        copied += bytesToCopy
     }
 
-    while (copied < limit) {
-        read(min = 0, consumer = copy)
-        if (isClosedForRead) break
+    while (!isClosedForRead && copied < limit) {
+        read(consumer = copy)
     }
+
+    closedCause?.let { throw it }
 
     return copied
 }

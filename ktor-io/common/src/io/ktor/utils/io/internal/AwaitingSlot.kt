@@ -7,15 +7,14 @@ package io.ktor.utils.io.internal
 import io.ktor.utils.io.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
 /**
  * Exclusive slot for waiting.
  * Only one waiter allowed.
- *
- * TODO: replace [Job] -> [Continuation] when all coroutines problems are fixed.
  */
 internal class AwaitingSlot {
-    private val suspension: AtomicRef<CompletableJob?> = atomic(null)
+    private val suspension: AtomicRef<Continuation<Unit>?> = atomic(null)
 
     init {
         makeShared()
@@ -24,8 +23,8 @@ internal class AwaitingSlot {
     /**
      * Wait for other [sleep] or resume.
      */
-    public suspend fun sleep() {
-        if (trySuspend()) {
+    suspend fun sleep(condition: () -> Boolean) {
+        if (trySuspend(condition)) {
             return
         }
 
@@ -35,31 +34,64 @@ internal class AwaitingSlot {
     /**
      * Resume waiter.
      */
-    public fun resume() {
-        suspension.getAndSet(null)?.complete()
+    fun resume() {
+        val value = suspension.value
+        if (value is CancelledSlot) {
+            value.resume(Unit)
+            return
+        }
+
+        suspension.getAndSet(null)?.resume(Unit)
     }
 
     /**
      * Cancel waiter.
      */
-    public fun cancel(cause: Throwable?) {
-        val continuation = suspension.getAndSet(null) ?: return
+    fun cancel(cause: Throwable?) {
+        val slot = CancelledSlot(cause)
+        while (true) {
+            val current = suspension.value
+            if (current is CancelledSlot) {
+                current.resume(Unit)
+                break
+            }
 
-        if (cause != null) {
-            continuation.completeExceptionally(cause)
-        } else {
-            continuation.complete()
+            if (!suspension.compareAndSet(current, slot)) continue
+            current ?: break
+
+            if (cause != null) {
+                current.resumeWithException(cause)
+            } else {
+                current.resume(Unit)
+            }
+
+            break
         }
     }
 
-    private suspend fun trySuspend(): Boolean {
+    private suspend fun trySuspend(condition: () -> Boolean): Boolean {
         var suspended = false
 
-        val job = Job()
-        if (suspension.compareAndSet(null, job)) {
-            suspended = true
-            job.join()
+        val current = suspension.value
+        if (current is CancelledSlot) {
+            current.resume(Unit)
+            return false
         }
+
+        suspendCancellableCoroutine<Unit> {
+            if (!suspension.compareAndSet(null, it)) {
+                it.resume(Unit)
+                return@suspendCancellableCoroutine
+            }
+
+            if (!condition() &&  suspension.compareAndSet(it, null)) {
+                it.resume(Unit)
+                return@suspendCancellableCoroutine
+            }
+
+            suspended = true
+        }
+
 
         return suspended
     }

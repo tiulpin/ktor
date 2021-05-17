@@ -10,6 +10,7 @@ kotlin.sourceSets {
 
     val jvmTest by getting {
         dependencies {
+            implementation(project(":ktor-server"))
             implementation(project(":ktor-server:ktor-server-test-host"))
         }
     }

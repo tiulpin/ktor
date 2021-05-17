@@ -23,6 +23,7 @@ public abstract class io/ktor/utils/io/ByteChannelSequentialBase : io/ktor/utils
 	public synthetic fun <init> (Lio/ktor/utils/io/core/internal/ChunkBuffer;ZLio/ktor/utils/io/pool/ObjectPool;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected final fun afterRead (I)V
 	protected final fun afterWrite (I)V
+	public fun attachJob (Lkotlinx/coroutines/Job;)V
 	public fun await (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun awaitFreeSpace (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	protected final fun awaitSuspend (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -49,7 +50,6 @@ public abstract class io/ktor/utils/io/ByteChannelSequentialBase : io/ktor/utils
 	protected final fun prepareFlushedBytes ()V
 	public fun readAvailable (Lio/ktor/utils/io/core/internal/ChunkBuffer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readAvailable ([BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	protected final fun readAvailableClosed ()I
 	public fun readBoolean (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readByte (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readDouble (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -66,8 +66,8 @@ public abstract class io/ktor/utils/io/ByteChannelSequentialBase : io/ktor/utils
 	public fun readUTF8Line (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readUTF8LineTo (Ljava/lang/Appendable;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun request (I)Lio/ktor/utils/io/core/internal/ChunkBuffer;
-	protected final fun setClosed (Z)V
 	public fun startReadSession ()Lio/ktor/utils/io/SuspendableReadSession;
+	public fun toString ()Ljava/lang/String;
 	public fun writeAvailable (Lio/ktor/utils/io/core/internal/ChunkBuffer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun writeAvailable ([BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun writeByte (BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -83,9 +83,8 @@ public abstract class io/ktor/utils/io/ByteChannelSequentialBase : io/ktor/utils
 	public fun writeSuspendSession (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/ktor/utils/io/ByteChannelSequentialJVM : io/ktor/utils/io/ByteChannelSequentialBase {
+public class io/ktor/utils/io/ByteChannelSequentialJVM : io/ktor/utils/io/ByteChannelSequentialBase {
 	public fun <init> (Lio/ktor/utils/io/core/internal/ChunkBuffer;Z)V
-	public fun attachJob (Lkotlinx/coroutines/Job;)V
 	public fun awaitContent (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun lookAhead (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public fun lookAheadSuspend (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -333,6 +332,12 @@ public final class io/ktor/utils/io/ReaderJob$DefaultImpls {
 
 public abstract interface class io/ktor/utils/io/ReaderScope : kotlinx/coroutines/CoroutineScope {
 	public abstract fun getChannel ()Lio/ktor/utils/io/ByteReadChannel;
+}
+
+public final class io/ktor/utils/io/ReadersKt {
+	public static final fun toByteArray (Lio/ktor/utils/io/ByteReadChannel;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun toByteArray$default (Lio/ktor/utils/io/ByteReadChannel;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun use (Lio/ktor/utils/io/ByteWriteChannel;Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract interface class io/ktor/utils/io/SuspendableReadSession : io/ktor/utils/io/ReadSession {

@@ -8,8 +8,6 @@ import io.ktor.network.selector.*
 import io.ktor.network.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.nio.*
 import io.ktor.utils.io.pool.*
 import kotlinx.coroutines.*
 import java.nio.*
@@ -125,7 +123,12 @@ internal fun CoroutineScope.attachForReadingDirectImpl(
 private suspend fun ByteWriteChannel.readFrom(nioChannel: ReadableByteChannel): Int {
     var count = 0
     write { buffer ->
-        count = nioChannel.read(buffer)
+        try {
+            count = nioChannel.read(buffer)
+        } catch (cause: Throwable) {
+            close(cause)
+            throw cause
+        }
     }
 
     return count

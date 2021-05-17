@@ -8,12 +8,19 @@ import io.ktor.server.sessions.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.debug.junit4.*
+import org.junit.*
 import java.io.*
 import java.nio.file.*
 import kotlin.test.*
+import kotlin.test.Test
 
 class DirectorySessionStorageTest {
-    private val dir = Files.createTempDirectory("ktor-tests-").toFile()!!
+
+    @get:Rule
+    val timeoutRule: CoroutinesTimeout by lazy { CoroutinesTimeout.seconds(60) }
+
+    private val dir = Files.createTempDirectory("ktor-tests-").toFile()
     private val storage = directorySessionStorage(dir, false)
 
     @AfterTest
@@ -34,7 +41,11 @@ class DirectorySessionStorageTest {
 
     @Test
     fun testSaveSimple(): Unit = runBlocking {
-        storage.write("id1") { it.toOutputStream().writer().use { it.write("test1") } }
+        storage.write("id1") {
+            it.toOutputStream().writer().use {
+                it.write("test1")
+            }
+        }
         assertEquals("test1", storage.read("id1") { it.toInputStream().reader().use { it.readText() } })
     }
 

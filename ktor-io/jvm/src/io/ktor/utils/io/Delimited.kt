@@ -114,37 +114,39 @@ private suspend fun ByteReadChannel.readUntilDelimiterSuspend(
  */
 @Suppress("DEPRECATION")
 private fun LookAheadSession.tryCopyUntilDelimiter(delimiter: ByteBuffer, dst: ByteBuffer): Int {
-    var endFound = false
     val buffer = request(0, 1) ?: return 0
     val index = buffer.indexOfPartial(delimiter)
-    val size = if (index != -1) {
-        val found = minOf(buffer.remaining() - index, delimiter.remaining())
-        val notKnown = delimiter.remaining() - found
-
-        if (notKnown == 0) {
-            endFound = true
-            dst.putLimited(buffer, buffer.position() + index)
-        } else {
-            val remembered = buffer.duplicate()
-            val next = request(index + found, 1)
-            if (next == null) {
-                dst.putLimited(remembered, remembered.position() + index)
-            } else if (next.startsWith(delimiter, found)) {
-                if (next.remaining() >= notKnown) {
-                    endFound = true
-                    dst.putLimited(remembered, remembered.position() + index)
-                } else {
-                    dst.putLimited(remembered, remembered.position() + index)
-                }
-            } else {
-                dst.putLimited(remembered, remembered.position() + index + 1)
-            }
-        }
-    } else {
-        dst.putAtMost(buffer)
+    if (index == -1) {
+        val result = dst.putAtMost(buffer)
+        consumed(result)
+        return result
     }
-    consumed(size)
 
+    val found = minOf(buffer.remaining() - index, delimiter.remaining())
+    val notKnown = delimiter.remaining() - found
+    if (notKnown == 0) {
+        val result = dst.putLimited(buffer, buffer.position() + index)
+        consumed(result)
+        return -result
+    }
+
+    var endFound = false
+    val remembered = buffer.duplicate()
+    val next = request(index + found, 1)
+    val size = when {
+        next == null -> {
+            dst.putLimited(remembered, remembered.position() + index)
+        }
+        next.startsWith(delimiter, found) -> {
+            endFound = next.remaining() >= notKnown
+            dst.putLimited(remembered, remembered.position() + index)
+        }
+        else -> {
+            dst.putLimited(remembered, remembered.position() + index + 1)
+        }
+    }
+
+    consumed(size)
     return if (endFound) -size else size
 }
 

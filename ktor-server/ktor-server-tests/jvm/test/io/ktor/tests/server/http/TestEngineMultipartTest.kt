@@ -12,11 +12,17 @@ import io.ktor.server.testing.*
 import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
+import kotlinx.coroutines.debug.junit4.*
+import org.junit.*
 import kotlin.test.*
+import kotlin.test.Test
 
 class TestEngineMultipartTest {
     private val boundary = "***bbb***"
     private val contentType = ContentType.MultiPart.FormData.withParameter("boundary", boundary)
+
+    @get:Rule
+    val timeout = CoroutinesTimeout(60 * 1000L, true)
 
     @Test
     fun testNonMultipart() {

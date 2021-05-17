@@ -110,5 +110,11 @@ public fun ByteWriteChannel.deflated(
     pool: ObjectPool<ByteBuffer> = KtorDefaultPool,
     coroutineContext: CoroutineContext = Dispatchers.Unconfined
 ): ByteWriteChannel = GlobalScope.reader(coroutineContext, autoFlush = true) {
-    channel.deflated(gzip, pool, coroutineContext).copyTo(this@deflated)
+    try {
+        channel.deflated(gzip, pool, coroutineContext).copyTo(this@deflated)
+    } catch (cause: Throwable) {
+        this@deflated.close(cause)
+    } finally {
+        this@deflated.close()
+    }
 }.channel

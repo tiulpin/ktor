@@ -9,7 +9,6 @@ import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
 import java.io.*
-import java.util.concurrent.locks.*
 import kotlin.coroutines.*
 import kotlin.coroutines.intrinsics.*
 
@@ -173,8 +172,8 @@ private abstract class BlockingAdapter(val parent: Job? = null) {
     }
 
     @Suppress("LeakingThis")
-    private val state: AtomicRef<Any> =
-        atomic(this) // could be a thread, a continuation, Unit, an exception or this if not yet started
+    // could be a thread, a continuation, Unit, an exception or this if not yet started
+    private val state: AtomicRef<Any> = atomic(this)
     private val result = atomic(0)
     private val disposable: DisposableHandle? = parent?.invokeOnCompletion { cause ->
         if (cause != null) {
@@ -284,6 +283,7 @@ private abstract class BlockingAdapter(val parent: Job? = null) {
     }
 
     protected fun finish(rc: Int) {
+        println("FINISH $rc")
         result.value = rc
     }
 }
