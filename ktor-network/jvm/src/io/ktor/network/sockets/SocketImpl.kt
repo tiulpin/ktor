@@ -39,7 +39,7 @@ internal class SocketImpl<out S : SocketChannel>(
                 // TCP has a well known self-connect problem, which client can connect to the client itself
                 // without any program listen on the port.
                 if (selfConnect()) {
-                    this.socket.close()
+                    socket.close()
                     continue
                 }
                 break
@@ -59,15 +59,13 @@ internal class SocketImpl<out S : SocketChannel>(
     }
 
     private fun selfConnect(): Boolean {
-        if (this.localAddress == null || this.remoteAddress == null) {
-            throw IllegalStateException("localAddress and remoteAddress should not be null.")
+        if (socket.localPort != socket.port) {
+            return false
         }
 
-        val localHostAddress = (this.localAddress as? InetSocketAddress)?.address?.hostAddress ?: ""
-        val remoteHostAddress = (this.remoteAddress as? InetSocketAddress)?.address?.hostAddress ?: ""
-        val isRemoteAnyLocalAddress = (this.remoteAddress as? InetSocketAddress)?.address?.isAnyLocalAddress ?: false
-        val localPort = this.localAddress.port
-        val remotePort = this.remoteAddress.port
-        return localPort == remotePort && (isRemoteAnyLocalAddress || localHostAddress == remoteHostAddress)
+        val localAddress = socket.localAddress!!
+        val remoteAddress = socket.inetAddress!!
+
+        return (remoteAddress.isAnyLocalAddress || localAddress == remoteAddress)
     }
 }
