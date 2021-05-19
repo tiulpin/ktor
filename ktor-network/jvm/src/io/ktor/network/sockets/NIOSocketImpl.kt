@@ -8,10 +8,10 @@ import io.ktor.network.selector.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.ByteChannel
 import io.ktor.utils.io.pool.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import java.nio.*
 import java.nio.channels.*
-import java.util.concurrent.atomic.*
 import kotlin.coroutines.*
 
 internal abstract class NIOSocketImpl<out S>(
@@ -22,9 +22,9 @@ internal abstract class NIOSocketImpl<out S>(
 ) : ReadWriteSocket, SelectableBase(channel), CoroutineScope
     where S : java.nio.channels.ByteChannel, S : SelectableChannel {
 
-    private val closeFlag = AtomicBoolean()
-    private val readerJob = AtomicReference<ReaderJob?>()
-    private val writerJob = AtomicReference<WriterJob?>()
+    private val closeFlag = atomic(false)
+    private val readerJob = atomic<ReaderJob?>(null)
+    private val writerJob = atomic<WriterJob?>(null)
 
     override val socketContext: CompletableJob = Job()
 
@@ -38,7 +38,7 @@ internal abstract class NIOSocketImpl<out S>(
     // however it is not the case for attachForWriting this is why we use direct writing in any case
 
     final override fun attachForReading(channel: ByteChannel): WriterJob {
-        return attachFor("reading", channel, writerJob) {
+        return attachFor("reading", channel, { writerJob.compareAndSet(null, it) }) {
             if (pool != null) {
                 attachForReadingImpl(channel, this.channel, this, selector, pool, socketOptions)
             } else {
@@ -48,7 +48,7 @@ internal abstract class NIOSocketImpl<out S>(
     }
 
     final override fun attachForWriting(channel: ByteChannel): ReaderJob {
-        return attachFor("writing", channel, readerJob) {
+        return attachFor("writing", channel, { readerJob.compareAndSet(null, it) }) {
             attachForWritingDirectImpl(channel, this.channel, this, selector, socketOptions)
         }
     }
@@ -58,9 +58,9 @@ internal abstract class NIOSocketImpl<out S>(
     }
 
     override fun close() {
-        if (closeFlag.compareAndSet(false, true)) {
-            readerJob.get()?.channel?.close()
-            writerJob.get()?.cancel()
+        if (closeFlag.compareAndSet(expect = false, update = true)) {
+            readerJob.value?.channel?.close()
+            writerJob.value?.cancel()
             checkChannels()
         }
     }
@@ -68,10 +68,10 @@ internal abstract class NIOSocketImpl<out S>(
     private fun <J : Job> attachFor(
         name: String,
         channel: ByteChannel,
-        ref: AtomicReference<J?>,
+        compareAndSet: (J) -> Boolean,
         producer: () -> J
     ): J {
-        if (closeFlag.get()) {
+        if (closeFlag.value) {
             val e = ClosedChannelException()
             channel.close(e)
             throw e
@@ -79,12 +79,12 @@ internal abstract class NIOSocketImpl<out S>(
 
         val j = producer()
 
-        if (!ref.compareAndSet(null, j)) {
+        if (!compareAndSet(j)) {
             val e = IllegalStateException("$name channel has already been set")
             j.cancel()
             throw e
         }
-        if (closeFlag.get()) {
+        if (closeFlag.value) {
             val e = ClosedChannelException()
             j.cancel()
             channel.close(e)
@@ -113,9 +113,9 @@ internal abstract class NIOSocketImpl<out S>(
     }
 
     private fun checkChannels() {
-        if (closeFlag.get() && readerJob.completedOrNotStarted && writerJob.completedOrNotStarted) {
-            val e1 = readerJob.exception
-            val e2 = writerJob.exception
+        if (closeFlag.value && readerJob.value.completedOrNotStarted && writerJob.value.completedOrNotStarted) {
+            val e1 = readerJob.value.exception
+            val e2 = writerJob.value.exception
             val e3 = actualClose()
 
             val combined = combine(combine(e1, e2), e3)
@@ -134,11 +134,11 @@ internal abstract class NIOSocketImpl<out S>(
         }
     }
 
-    private val AtomicReference<out Job?>.completedOrNotStarted: Boolean
-        get() = get().let { it == null || it.isCompleted }
+    private val Job?.completedOrNotStarted: Boolean
+        get() = this == null || this.isCompleted
 
     @OptIn(InternalCoroutinesApi::class)
-    private val AtomicReference<out Job?>.exception: Throwable?
-        get() = get()?.takeIf { it.isCancelled }
+    private val Job?.exception: Throwable?
+        get() = this?.takeIf { it.isCancelled }
             ?.getCancellationException()?.cause // TODO it should be completable deferred or provide its own exception
 }
