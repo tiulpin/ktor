@@ -65,7 +65,7 @@ internal abstract class NIOSocketImpl<out S>(
         }
     }
 
-    private fun <J : Job> attachFor(
+    private inline fun <J : Job> attachFor(
         name: String,
         channel: ByteChannel,
         compareAndSet: (J) -> Boolean,
