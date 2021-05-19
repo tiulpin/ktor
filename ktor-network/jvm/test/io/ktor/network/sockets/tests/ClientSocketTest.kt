@@ -8,6 +8,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.SocketImpl
+import io.ktor.util.network.*
 import io.ktor.utils.io.*
 import io.mockk.*
 import kotlinx.coroutines.*
@@ -128,10 +129,14 @@ class ClientSocketTest {
         }
     }
 
-    private fun mockSocket(local: SocketAddress, remote: SocketAddress, channel: SocketChannel): java.net.Socket {
+    private fun mockSocket(local: InetSocketAddress, remote: InetSocketAddress, channel: SocketChannel): java.net.Socket {
         val socket = mockk<java.net.Socket>()
         every { socket.localSocketAddress } returns local
         every { socket.remoteSocketAddress } returns remote
+        every { socket.localAddress } returns local.address
+        every { socket.inetAddress } returns remote.address
+        every { socket.localPort } returns local.port
+        every { socket.port } returns remote.port
         every { socket.close() } answers { channel.close() }
         return socket
     }
@@ -141,6 +146,10 @@ class ClientSocketTest {
         every { address.port } returns port
         every { address.address?.hostAddress } returns hostAddress
         every { address.address?.isAnyLocalAddress } returns false
+        every { address.address?.equals(any()) } answers { call ->
+            val other = call.invocation.args.getOrNull(0) as? InetAddress ?: return@answers false
+            other.hostAddress == hostAddress
+        }
         return address
     }
 
