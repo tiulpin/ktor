@@ -70,7 +70,7 @@ internal class WriteSessionImpl(channel: ByteBufferChannel) : WriterSuspendSessi
             locked = 0
         }
 
-        return current.tryWriteSuspend(n)
+        return current.writeSuspend(n)
     }
 
     private suspend fun tryAwaitJoinSwitch(n: Int) {
@@ -83,7 +83,7 @@ internal class WriteSessionImpl(channel: ByteBufferChannel) : WriterSuspendSessi
         current.tryTerminate()
 
         do {
-            current.tryWriteSuspend(n)
+            current.writeSuspend(n)
             current = current.resolveChannelInstance()
             byteBuffer = current.setupStateForWrite() ?: continue
             view = IoBuffer(current.currentState().backingBuffer)

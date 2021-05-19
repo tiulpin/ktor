@@ -1125,7 +1125,7 @@ internal open class ByteBufferChannel(
 
     private suspend fun writeFullySuspend(src: ByteBuffer) {
         while (src.hasRemaining()) {
-            tryWriteSuspend(1)
+            writeSuspend(1)
 
             joining?.let { resolveDelegation(this, it)?.let { return it.writeFully(src) } }
 
@@ -1135,7 +1135,7 @@ internal open class ByteBufferChannel(
 
     private suspend fun writeFullySuspend(src: IoBuffer) {
         while (src.canRead()) {
-            tryWriteSuspend(1)
+            writeSuspend(1)
 
             joining?.let { resolveDelegation(this, it)?.let { return it.writeFully(src) } }
 
@@ -1217,7 +1217,7 @@ internal open class ByteBufferChannel(
                     while (copied < limit) {
                         var avWBefore = state.availableForWrite
                         if (avWBefore == 0) {
-                            tryWriteSuspend(1)
+                            writeSuspend(1)
                             if (joining != null) break
                             avWBefore = state.availableForWrite
                         }
@@ -1296,7 +1296,7 @@ internal open class ByteBufferChannel(
                 }
 
                 if (joining != null) {
-                    tryWriteSuspend(1)
+                    writeSuspend(1)
                 }
             }
 
@@ -1459,7 +1459,7 @@ internal open class ByteBufferChannel(
 
     private suspend fun writeSuspend(src: ByteArray, offset: Int, length: Int): Int {
         while (true) {
-            tryWriteSuspend(1)
+            writeSuspend(1)
 
             joining?.let { resolveDelegation(this, it)?.let { return it.writeSuspend(src, offset, length) } }
 
@@ -2344,7 +2344,7 @@ internal open class ByteBufferChannel(
         COROUTINE_SUSPENDED
     }
 
-    internal suspend fun tryWriteSuspend(size: Int) {
+    internal suspend fun writeSuspend(size: Int) {
         if (!writeSuspendPredicate(size)) {
             closed?.sendException?.let { rethrowClosed(it) }
             return
@@ -2360,28 +2360,6 @@ internal open class ByteBufferChannel(
             writeSuspension(c)
             c.completeSuspendBlock(raw.intercepted())
         }
-    }
-
-    private suspend fun writeSuspend(size: Int) {
-        while (writeSuspendPredicate(size)) {
-            suspendCancellableCoroutine<Unit> { c ->
-                do {
-                    closed?.sendException?.let { rethrowClosed(it) }
-                    if (!writeSuspendPredicate(size)) {
-                        c.resume(Unit)
-                        break
-                    }
-                } while (!setContinuation({ writeOp }, _writeOp, c, { writeSuspendPredicate(size) }))
-
-                flushImpl(minWriteSize = size)
-
-                if (shouldResumeReadOp()) {
-                    resumeReadOp()
-                }
-            }
-        }
-
-        closed?.sendException?.let { rethrowClosed(it) }
     }
 
     private inline fun <T, C : Continuation<T>> setContinuation(
