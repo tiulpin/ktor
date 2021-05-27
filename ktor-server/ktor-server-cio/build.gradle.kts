@@ -6,6 +6,7 @@ kotlin.sourceSets {
             api(project(":ktor-server:ktor-server-host-common"))
             api(project(":ktor-http:ktor-http-cio"))
             api(project(":ktor-network"))
+            api(project(":ktor-test-dispatcher"))
         }
     }
     val commonTest by getting {

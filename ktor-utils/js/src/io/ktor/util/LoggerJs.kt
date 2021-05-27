@@ -4,6 +4,8 @@
 
 package io.ktor.util
 
+import kotlin.reflect.*
+
 @InternalAPI
 public actual interface Logger {
     public actual fun error(message: String)
@@ -26,6 +28,8 @@ public actual enum class LoggingLevel {
 @InternalAPI
 public actual object LoggerFactory {
     public actual fun getLogger(name: String): Logger = ConsoleLogger(name)
+
+    public actual fun getLogger(kotlinClass: KClass<*>): Logger = ConsoleLogger(kotlinClass.simpleName!!)
 }
 
 private class ConsoleLogger(private val name: String) : Logger {

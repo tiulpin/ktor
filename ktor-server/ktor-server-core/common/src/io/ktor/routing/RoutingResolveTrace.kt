@@ -6,6 +6,8 @@ package io.ktor.routing
 
 import io.ktor.application.*
 import io.ktor.util.*
+import io.ktor.util.collections.*
+import io.ktor.utils.io.concurrent.*
 
 /**
  * Represents a single entry in the [RoutingResolveTrace].

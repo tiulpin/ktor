@@ -8,6 +8,7 @@ import io.ktor.application.*
 import io.ktor.http.cio.*
 import io.ktor.server.cio.backend.*
 import io.ktor.server.engine.*
+import io.ktor.test.dispatcher.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import kotlinx.atomicfu.*
@@ -16,8 +17,10 @@ import kotlinx.coroutines.*
 /**
  * Engine that based on CIO backend
  */
-public class CIOApplicationEngine(environment: ApplicationEngineEnvironment, configure: Configuration.() -> Unit) :
-    BaseApplicationEngine(environment, initEngine = false) {
+public class CIOApplicationEngine(
+    environment: ApplicationEngineEnvironment,
+    configure: Configuration.() -> Unit
+) : BaseApplicationEngine(environment, initEngine = false) {
 
     /**
      * CIO-based server configuration
@@ -96,7 +99,7 @@ public class CIOApplicationEngine(environment: ApplicationEngineEnvironment, con
             }
         }
 
-        runBlocking {
+        testSuspend {
             startupJob.await()
 
             if (wait) {
@@ -120,7 +123,7 @@ public class CIOApplicationEngine(environment: ApplicationEngineEnvironment, con
     private fun shutdownServer(gracePeriodMillis: Long, timeoutMillis: Long) {
         stopRequest.complete()
 
-        runBlocking {
+        testSuspend {
             val result = withTimeoutOrNull(gracePeriodMillis) {
                 serverJob?.join()
                 true

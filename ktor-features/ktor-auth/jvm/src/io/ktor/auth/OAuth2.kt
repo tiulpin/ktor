@@ -13,10 +13,11 @@ import io.ktor.http.auth.*
 import io.ktor.http.content.*
 import io.ktor.response.*
 import io.ktor.util.*
+import io.ktor.util.Logger
+import io.ktor.util.LoggerFactory
 import io.ktor.util.pipeline.*
 import kotlinx.coroutines.*
 import org.json.simple.*
-import org.slf4j.*
 import java.io.*
 import java.net.*
 

@@ -295,5 +295,5 @@ private fun Random.nextString(length: Int, dictionary: CharArray): String {
         chars[index] = dictionary[nextInt(dictionarySize)]
     }
 
-    return String(chars)
+    return chars.concatToString()
 }

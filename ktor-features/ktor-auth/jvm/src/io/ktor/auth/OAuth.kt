@@ -10,9 +10,10 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.util.*
+import io.ktor.util.Logger
+import io.ktor.util.LoggerFactory
 import io.ktor.util.pipeline.*
 import kotlinx.coroutines.*
-import org.slf4j.*
 import java.io.*
 
 private val Logger: Logger = LoggerFactory.getLogger("io.ktor.auth.oauth2")

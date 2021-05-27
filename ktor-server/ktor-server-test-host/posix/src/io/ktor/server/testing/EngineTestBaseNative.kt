@@ -197,7 +197,6 @@ actual constructor(
         module: Application.() -> Unit
     ): TEngine= createServer(null, parent, module)
 
-
     protected actual fun createAndStartServer(
         routingConfigurer: Routing.() -> Unit
     ): TEngine = createAndStartServer(null, EmptyCoroutineContext, routingConfigurer)
@@ -212,11 +211,8 @@ actual constructor(
         routingConfigurer: Routing.() -> Unit
     ): TEngine = createAndStartServer(log, EmptyCoroutineContext, routingConfigurer)
 
-
     protected actual fun withUrl(
         path: String,
         block: suspend HttpResponse.(Int) -> Unit
     ) = withUrl(path, {}, block)
-
-
 }

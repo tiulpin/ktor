@@ -8,8 +8,8 @@ import io.ktor.application.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.*
+import io.ktor.util.LoggerFactory
 import io.ktor.util.pipeline.*
-import org.slf4j.*
 
 /**
  * Authentication feature supports pluggable mechanisms for checking and challenging a client to provide credentials
@@ -26,7 +26,7 @@ public class Authentication(config: Configuration) {
 
     private var config = config.copy()
 
-    private val logger = LoggerFactory.getLogger(Authentication::class.java)
+    private val logger = LoggerFactory.getLogger(Authentication::class)
 
     /**
      * Authentication configuration

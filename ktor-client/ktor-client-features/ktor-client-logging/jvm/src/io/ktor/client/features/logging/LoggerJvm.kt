@@ -6,11 +6,12 @@ package io.ktor.client.features.logging
 
 import io.ktor.client.*
 import io.ktor.util.*
+import io.ktor.util.LoggerFactory
 import org.slf4j.*
 
 public actual val Logger.Companion.DEFAULT: Logger
     get() = object : Logger {
-        private val delegate = LoggerFactory.getLogger(HttpClient::class.java)!!
+        private val delegate = LoggerFactory.getLogger(HttpClient::class)
         override fun log(message: String) {
             delegate.info(message)
         }

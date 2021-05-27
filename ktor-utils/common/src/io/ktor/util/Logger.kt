@@ -4,6 +4,8 @@
 
 package io.ktor.util
 
+import kotlin.reflect.*
+
 @InternalAPI
 public expect enum class LoggingLevel {
     ERROR, WARN, INFO, DEBUG, TRACE
@@ -26,4 +28,6 @@ public expect interface Logger {
 @InternalAPI
 public expect object LoggerFactory {
     public fun getLogger(name: String): Logger
+
+    public fun getLogger(kotlinClass: KClass<*>): Logger
 }

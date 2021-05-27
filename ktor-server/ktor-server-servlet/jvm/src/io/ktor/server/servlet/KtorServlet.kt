@@ -7,6 +7,8 @@ package io.ktor.server.servlet
 import io.ktor.application.*
 import io.ktor.server.engine.*
 import io.ktor.util.*
+import io.ktor.util.Logger
+import io.ktor.util.LoggerFactory
 import io.ktor.util.cio.*
 import io.ktor.util.pipeline.*
 import kotlinx.coroutines.*

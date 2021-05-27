@@ -4,6 +4,7 @@
 
 package io.ktor.sessions
 
+import io.ktor.util.*
 import kotlin.reflect.*
 
 /**
@@ -87,7 +88,7 @@ public fun <S : Any> Sessions.Configuration.header(name: String, sessionType: KC
  * Configure sessions to get it from HTTP header using session [storage]
  */
 public inline fun <reified S : Any> Sessions.Configuration.header(name: String, storage: SessionStorage) {
-    header<S>(name, storage, {})
+    header<S>(name, storage) {}
 }
 
 /**
