@@ -8,12 +8,14 @@ import io.ktor.client.engine.*
 import io.ktor.client.request.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.*
 import org.apache.hc.client5.http.async.methods.*
 import org.apache.hc.client5.http.impl.async.*
 import org.apache.hc.core5.concurrent.*
 import org.apache.hc.core5.http.*
+import org.apache.hc.core5.http.ContentType
 import java.lang.Exception
 import kotlin.coroutines.*
 
@@ -28,6 +30,11 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
             val builder = SimpleRequestBuilder.create(data.method.value)
                 .setHttpHost(HttpHost(data.url.host, data.url.port))
                 .setPath(data.url.encodedPath)
+
+            if (data.body is OutgoingContent.ByteArrayContent) {
+                val body = data.body as OutgoingContent.ByteArrayContent
+                builder.setBody(body.bytes(), ContentType.parse(body.contentType.toString()))
+            }
 
             for ((name, values) in data.headers.entries()) {
                 values.forEach { v ->

@@ -8,7 +8,9 @@ import io.ktor.application.*
 import io.ktor.client.engine.*
 import io.ktor.client.request.*
 import io.ktor.client.tests.utils.*
+import io.ktor.content.*
 import io.ktor.http.*
+import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
@@ -39,6 +41,9 @@ class EngineTest: TestWithKtor() {
                     values.forEach { v -> call.response.header(name, v) }
                 }
                 call.respond(HttpStatusCode.OK)
+            }
+            post("/body") {
+                call.respond(call.receiveText())
             }
         }
     }
@@ -135,6 +140,19 @@ class EngineTest: TestWithKtor() {
 
         assertEquals("3", response.headers["Content-Length"])
         assertEquals("text/plain; charset=UTF-8", response.headers["Content-Type"])
+    }
+
+    @Test
+    fun postWithBody(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Post
+            url {
+                path("/body")
+            }
+            body = TextContent("test", contentType = ContentType.Any)
+        }
+
+        assertEquals("test", response.body)
     }
 
     private suspend fun makeRequest(requestBuilder: HttpRequestBuilder.() -> Unit): HttpResponseData {
