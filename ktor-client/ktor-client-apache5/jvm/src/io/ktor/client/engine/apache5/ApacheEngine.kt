@@ -6,6 +6,7 @@ package io.ktor.client.engine.apache5
 
 import io.ktor.client.engine.*
 import io.ktor.client.request.*
+import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.*
@@ -24,7 +25,7 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
         HttpAsyncClients.createDefault().use { client ->
             client.start()
 
-            val request = SimpleRequestBuilder.get()
+            val request = SimpleRequestBuilder.create(data.method.value)
                 .setHttpHost(HttpHost(data.url.host, data.url.port))
                 .setPath(data.url.encodedPath)
                 .build()
@@ -52,7 +53,7 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
                 requestTime = GMTDate.START,
                 headers = Headers.Empty,
                 version = HttpProtocolVersion(response.version.protocol, response.version.major, response.version.minor),
-                body = response.body.bodyText,
+                body = if (response.body != null) response.body.bodyText else EmptyContent,
                 callContext = EmptyCoroutineContext
             )
         }

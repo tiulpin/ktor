@@ -22,14 +22,17 @@ class EngineTest: TestWithKtor() {
             get("/get") {
                 call.respondText { "GET" }
             }
-            get("/post") {
+            post("/post") {
                 call.respondText { "POST" }
             }
-            get("/put") {
+            put("/put") {
                 call.respondText { "PUT" }
             }
-            get("/delete") {
+            delete("/delete") {
                 call.respondText { "DELETE" }
+            }
+            head("/head") {
+                call.respond(HttpStatusCode.OK)
             }
         }
     }
@@ -50,7 +53,7 @@ class EngineTest: TestWithKtor() {
     @Test
     fun simplePOSTRequest(): Unit = runBlocking {
         val response = makeRequest {
-            method = HttpMethod.Get
+            method = HttpMethod.Post
             url {
                 path("/post")
             }
@@ -58,6 +61,44 @@ class EngineTest: TestWithKtor() {
 
         assertEquals(HttpStatusCode.OK, response.statusCode)
         assertEquals("POST", response.body)
+    }
+
+    @Test
+    fun simplePUTRequest(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Put
+            url {
+                path("/put")
+            }
+        }
+
+        assertEquals(HttpStatusCode.OK, response.statusCode)
+        assertEquals("PUT", response.body)
+    }
+
+    @Test
+    fun simpleDELETERequest(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Delete
+            url {
+                path("/delete")
+            }
+        }
+
+        assertEquals(HttpStatusCode.OK, response.statusCode)
+        assertEquals("DELETE", response.body)
+    }
+
+    @Test
+    fun simpleHEADRequest(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Head
+            url {
+                path("/head")
+            }
+        }
+
+        assertEquals(HttpStatusCode.OK, response.statusCode)
     }
 
     private suspend fun makeRequest(requestBuilder: HttpRequestBuilder.() -> Unit): HttpResponseData {
