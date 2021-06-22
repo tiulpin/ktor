@@ -9,6 +9,7 @@ import io.ktor.client.request.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.util.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.*
 import org.apache.hc.client5.http.async.methods.*
@@ -31,9 +32,11 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
                 .setHttpHost(HttpHost(data.url.host, data.url.port))
                 .setPath(data.url.encodedPath)
 
-            if (data.body is OutgoingContent.ByteArrayContent) {
-                val body = data.body as OutgoingContent.ByteArrayContent
-                builder.setBody(body.bytes(), ContentType.parse(body.contentType.toString()))
+            when (val body = data.body) {
+                is OutgoingContent.ByteArrayContent ->
+                    builder.setBody(body.bytes(), ContentType.parse(body.contentType.toString()))
+                is OutgoingContent.ReadChannelContent ->
+                    builder.setBody(body.readFrom().toByteArray(), ContentType.parse(body.contentType.toString()))
             }
 
             for ((name, values) in data.headers.entries()) {

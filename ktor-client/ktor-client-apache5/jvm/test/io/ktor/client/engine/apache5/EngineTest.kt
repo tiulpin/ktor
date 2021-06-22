@@ -9,12 +9,15 @@ import io.ktor.client.engine.*
 import io.ktor.client.request.*
 import io.ktor.client.tests.utils.*
 import io.ktor.content.*
+import io.ktor.content.TextContent
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
@@ -143,7 +146,7 @@ class EngineTest: TestWithKtor() {
     }
 
     @Test
-    fun postWithBody(): Unit = runBlocking {
+    fun postTextContentBody(): Unit = runBlocking {
         val response = makeRequest {
             method = HttpMethod.Post
             url {
@@ -153,6 +156,44 @@ class EngineTest: TestWithKtor() {
         }
 
         assertEquals("test", response.body)
+    }
+
+    @Test
+    fun postReadChannelContentBody(): Unit = runBlocking {
+        val channel = ByteReadChannel("data")
+        val response = makeRequest {
+            method = HttpMethod.Post
+            url {
+                path("/body")
+            }
+            body = object : OutgoingContent.ReadChannelContent() {
+                override val contentType: ContentType = ContentType.Any
+                override val contentLength: Long = 4L
+                override fun readFrom(): ByteReadChannel = channel
+            }
+        }
+
+        assertEquals("data", response.body)
+    }
+
+    @Test
+    fun postWriteChannelContentBody(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Post
+            url {
+                path("/body")
+            }
+            body = object : OutgoingContent.WriteChannelContent() {
+                override suspend fun writeTo(channel: ByteWriteChannel) {
+                    channel.writeStringUtf8("hello")
+                }
+
+                override val contentType: ContentType = ContentType.Any
+                override val contentLength: Long = 4L
+            }
+        }
+
+        assertEquals("hello", response.body)
     }
 
     private suspend fun makeRequest(requestBuilder: HttpRequestBuilder.() -> Unit): HttpResponseData {
