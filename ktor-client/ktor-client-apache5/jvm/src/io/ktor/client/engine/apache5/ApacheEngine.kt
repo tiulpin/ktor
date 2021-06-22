@@ -25,14 +25,19 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
         HttpAsyncClients.createDefault().use { client ->
             client.start()
 
-            val request = SimpleRequestBuilder.create(data.method.value)
+            val builder = SimpleRequestBuilder.create(data.method.value)
                 .setHttpHost(HttpHost(data.url.host, data.url.port))
                 .setPath(data.url.encodedPath)
-                .build()
+
+            for ((name, values) in data.headers.entries()) {
+                values.forEach { v ->
+                    builder.addHeader(name, v)
+                }
+            }
 
             val responseDeferred = CompletableDeferred<SimpleHttpResponse>(coroutineContext[Job])
 
-            client.execute(request, object : FutureCallback<SimpleHttpResponse> {
+            client.execute(builder.build(), object : FutureCallback<SimpleHttpResponse> {
                 override fun completed(result: SimpleHttpResponse?) {
                     if (result != null) responseDeferred.complete(result)
                 }
@@ -48,10 +53,15 @@ public class ApacheEngine(override val dispatcher: CoroutineDispatcher, override
 
             val response = responseDeferred.await()
 
+            val headersBuilder = HeadersBuilder()
+            for (header in response.headers) {
+                headersBuilder.append(header.name, header.value)
+            }
+
             return HttpResponseData(
                 statusCode = HttpStatusCode(response.code, response.reasonPhrase),
                 requestTime = GMTDate.START,
-                headers = Headers.Empty,
+                headers = headersBuilder.build(),
                 version = HttpProtocolVersion(response.version.protocol, response.version.major, response.version.minor),
                 body = if (response.body != null) response.body.bodyText else EmptyContent,
                 callContext = EmptyCoroutineContext

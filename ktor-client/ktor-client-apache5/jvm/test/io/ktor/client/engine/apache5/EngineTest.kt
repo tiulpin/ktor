@@ -34,6 +34,12 @@ class EngineTest: TestWithKtor() {
             head("/head") {
                 call.respond(HttpStatusCode.OK)
             }
+            get("/echo-headers") {
+                call.request.headers.forEach { name, values ->
+                    values.forEach { v -> call.response.header(name, v) }
+                }
+                call.respond(HttpStatusCode.OK)
+            }
         }
     }
 
@@ -101,6 +107,36 @@ class EngineTest: TestWithKtor() {
         assertEquals(HttpStatusCode.OK, response.statusCode)
     }
 
+    @Test
+    fun sendSomeHeaders(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Get
+            url {
+                path("/echo-headers")
+            }
+            header("single", "test")
+            header("multiple", "test1")
+            header("multiple", "test2")
+        }
+
+        assertEquals(HttpStatusCode.OK, response.statusCode)
+        assertEquals("test", response.headers["single"])
+        assertEquals(listOf("test1", "test2"), response.headers.getAll("multiple"))
+    }
+
+    @Test
+    fun contentLengthAndTypeHeaders(): Unit = runBlocking {
+        val response = makeRequest {
+            method = HttpMethod.Get
+            url {
+                path("/get")
+            }
+        }
+
+        assertEquals("3", response.headers["Content-Length"])
+        assertEquals("text/plain; charset=UTF-8", response.headers["Content-Type"])
+    }
+
     private suspend fun makeRequest(requestBuilder: HttpRequestBuilder.() -> Unit): HttpResponseData {
         val engine = ApacheEngine(Dispatchers.Default, HttpClientEngineConfig())
         val request = HttpRequestBuilder().apply {
@@ -108,6 +144,7 @@ class EngineTest: TestWithKtor() {
                 port = serverPort
             }
         }.apply(requestBuilder).build()
+
         return engine.execute(request)
     }
 }
