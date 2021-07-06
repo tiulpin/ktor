@@ -190,7 +190,7 @@ private suspend fun pipelineWriterLoop(
     val receiveChildOrNull =
         suspendLambda<CoroutineScope, ByteReadChannel?> {
             @OptIn(ExperimentalCoroutinesApi::class)
-            channel.receiveOrNull()
+            (channel.receiveCatching().getOrNull())
         }
     while (true) {
         val child = timeout.withTimeout(receiveChildOrNull) ?: break
