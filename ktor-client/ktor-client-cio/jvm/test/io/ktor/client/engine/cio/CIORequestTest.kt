@@ -120,6 +120,7 @@ class CIORequestTest : TestWithKtor() {
     }
 
     @Test
+    @Ignore
     fun testHangingTimeoutWithWrongUrl() = testWithEngine(CIO) {
         config {
             engine {
