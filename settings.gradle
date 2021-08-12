@@ -18,6 +18,18 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("com.gradle.enterprise") version("3.6.3")
+}
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
+    }
+}
+
+
 pluginManagement.resolutionStrategy.eachPlugin {
     if (requested.id.id.startsWith("org.jetbrains.kotlin.")) {
         useVersion(requested.version)
@@ -124,3 +136,4 @@ include ':ktor-network:ktor-network-tls'
 include ':ktor-network:ktor-network-tls:ktor-network-tls-certificates'
 include ':ktor-bom'
 include ':ktor-test-dispatcher'
+
