@@ -15,7 +15,7 @@ import kotlin.coroutines.*
 @ContextDsl
 internal class DebugPipelineContext<TSubject : Any, TContext : Any> constructor(
     override val context: TContext,
-    private val interceptors: List<PipelineInterceptor<TSubject, TContext>>,
+    private val interceptors: List<PipelineInterceptorFunction<TSubject, TContext>>,
     subject: TSubject,
     override val coroutineContext: CoroutineContext
 ) : PipelineContext<TSubject, TContext>,
@@ -79,7 +79,8 @@ internal class DebugPipelineContext<TSubject : Any, TContext : Any> constructor(
             }
             val executeInterceptor = interceptors[index]
             this.index = index + 1
-            executeInterceptor.invoke(this, subject)
+            @Suppress("UNCHECKED_CAST")
+            (executeInterceptor as PipelineInterceptor<TSubject, TContext>).invoke(this, subject)
         } while (true)
 
         return subject
