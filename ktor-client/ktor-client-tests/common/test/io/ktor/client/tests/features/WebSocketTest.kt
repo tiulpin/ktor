@@ -117,6 +117,7 @@ class WebSocketTest : ClientLoader() {
             val header = headers[CUSTOM_HEADER]?.first()
             assertEquals(CUSTOM_HEADER_VALUE, header)
         }
+    }
 
 
     @Test
@@ -141,7 +142,7 @@ class WebSocketTest : ClientLoader() {
             val header = headers[CUSTOM_HEADER]?.first()
             assertEquals("$CUSTOM_HEADER_VALUE,$CUSTOM_HEADER_VALUE", header)
         }
-
+    }
 
     @Test
     fun testConfiguration() = clientTests(ENGINES_WITHOUT_WEBSOCKETS) {
