@@ -14,11 +14,11 @@ import kotlin.test.Test
 class ByteBufferChannelTest {
 
     @get:Rule
-    public val timeoutRule: CoroutinesTimeout by lazy { CoroutinesTimeout.seconds(60) }
+    val timeoutRule: CoroutinesTimeout by lazy { CoroutinesTimeout.seconds(60) }
 
     @Test
     fun testCompleteExceptionallyJob() {
-        val channel = ByteBufferChannel(false)
+        val channel = ByteChannel(false)
         Job().also { channel.attachJob(it) }.completeExceptionally(IOException("Text exception"))
 
         assertFailsWith<IOException> { runBlocking { channel.readByte() } }
@@ -26,7 +26,7 @@ class ByteBufferChannelTest {
 
     @Test
     fun readRemainingThrowsOnClosed() = runBlocking {
-        val channel = ByteBufferChannel(false)
+        val channel = ByteChannel(false)
         channel.writeFully(byteArrayOf(1, 2, 3, 4, 5))
         channel.close(IllegalStateException("closed"))
 
@@ -63,7 +63,7 @@ class ByteBufferChannelTest {
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun testWriteXRaceCondition(writer: suspend (ByteChannel) -> Unit): Unit = runBlocking {
-        val channel = ByteBufferChannel(false)
+        val channel = ByteChannel(false)
 
         val job1 = GlobalScope.async {
             try {
@@ -86,7 +86,7 @@ class ByteBufferChannelTest {
 
     @Test
     fun testReadAvailable() = runBlocking {
-        val channel = ByteBufferChannel(true)
+        val channel = ByteChannel(true)
         channel.writeFully(byteArrayOf(1, 2))
 
         val read1 = channel.readAvailable(4) { it.position(it.position() + 4) }
@@ -99,7 +99,7 @@ class ByteBufferChannelTest {
 
     @Test
     fun testAwaitContent() = runBlocking {
-        val channel = ByteBufferChannel(true)
+        val channel = ByteChannel(true)
 
         var awaitingContent = false
         launch {

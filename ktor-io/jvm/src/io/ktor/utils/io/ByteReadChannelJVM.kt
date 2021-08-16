@@ -247,11 +247,6 @@ public actual interface ByteReadChannel {
 
 public actual suspend fun ByteReadChannel.joinTo(dst: ByteWriteChannel, closeOnEnd: Boolean) {
     require(dst !== this)
-
-    if (this is ByteBufferChannel && dst is ByteBufferChannel) {
-        return dst.joinFrom(this, closeOnEnd)
-    }
-
     return joinToImplSuspend(dst, closeOnEnd)
 }
 
@@ -277,9 +272,7 @@ public actual suspend fun ByteReadChannel.copyTo(dst: ByteWriteChannel, limit: L
         return 0L
     }
 
-    if (this is ByteBufferChannel && dst is ByteBufferChannel) {
-        return dst.copyDirect(this, limit, null)
-    } else if (this is ByteChannelSequentialBase && dst is ByteChannelSequentialBase) {
+    if (this is ByteChannelSequentialBase && dst is ByteChannelSequentialBase) {
         return copyToSequentialImpl(dst, limit) // more specialized extension function
     }
 
