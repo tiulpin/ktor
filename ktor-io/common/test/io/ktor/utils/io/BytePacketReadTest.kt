@@ -46,7 +46,6 @@ class BytePacketReadTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc6.toByte())
         segment2.writeByte(0x86.toByte())
@@ -62,7 +61,6 @@ class BytePacketReadTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         while (segment1.writeRemaining > 1) {
             segment1.writeByte(0)
@@ -84,7 +82,6 @@ class BytePacketReadTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc6.toByte())
         segment2.writeByte(0x86.toByte())

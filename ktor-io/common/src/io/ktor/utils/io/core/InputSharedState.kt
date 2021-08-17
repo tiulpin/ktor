@@ -4,7 +4,6 @@
 
 package io.ktor.utils.io.core
 
-import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.internal.*
 
 internal expect class InputSharedState(
@@ -14,10 +13,4 @@ internal expect class InputSharedState(
     var head: ChunkBuffer
 
     var tailRemaining: Long
-
-    var headMemory: Memory
-
-    var headPosition: Int
-
-    var headEndExclusive: Int
 }

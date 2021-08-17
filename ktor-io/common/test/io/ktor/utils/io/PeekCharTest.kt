@@ -68,7 +68,6 @@ class PeekCharTest {
 
         val chunk1 = ChunkBuffer.Pool.borrow()
         val chunk2 = ChunkBuffer.Pool.borrow()
-        chunk1.reserveEndGap(8)
         chunk1.next = chunk2
 
         chunk1.writeByte(0xc3.toByte())
@@ -85,7 +84,6 @@ class PeekCharTest {
 
         val chunk1 = ChunkBuffer.Pool.borrow()
         val chunk2 = ChunkBuffer.Pool.borrow()
-        chunk1.reserveEndGap(8)
         chunk1.next = chunk2
 
         chunk1.writeByte(0xe3.toByte())
@@ -103,7 +101,6 @@ class PeekCharTest {
 
         val chunk1 = ChunkBuffer.Pool.borrow()
         val chunk2 = ChunkBuffer.Pool.borrow()
-        chunk1.reserveEndGap(8)
         chunk1.next = chunk2
 
         chunk1.writeByte(0xe3.toByte())
@@ -121,7 +118,6 @@ class PeekCharTest {
 
         val chunk1 = ChunkBuffer.Pool.borrow()
         val chunk2 = ChunkBuffer.Pool.borrow()
-        chunk1.reserveEndGap(8)
         chunk1.next = chunk2
 
         chunk1.writeFully(ByteArray(4087))

@@ -55,9 +55,10 @@ public abstract class Output internal constructor(
         }
 
     internal var tailPosition
-        get() = state.tailPosition
+        get() = _tail?.writePosition ?: 0
         set(value) {
-            state.tailPosition = value
+            val tail = _tail ?: return
+            tail.commitWrittenUntilIndex(value)
         }
 
     internal var tailEndExclusive
@@ -132,10 +133,7 @@ public abstract class Output internal constructor(
 
     private fun appendNewChunk(): ChunkBuffer {
         val new = pool.borrow()
-        new.reserveEndGap(Buffer.ReservedSize)
-
         appendSingleChunk(new)
-
         return new
     }
 
@@ -172,7 +170,6 @@ public abstract class Output internal constructor(
 
     private fun writeByteFallback(v: Byte) {
         appendNewChunk().writeByte(v)
-        tailPosition++
     }
 
     /**
@@ -251,49 +248,39 @@ public abstract class Output internal constructor(
      * Write chunk buffer to current [Output]. Assuming that chunk buffer is from current pool.
      */
     internal fun writeChunkBuffer(chunkBuffer: ChunkBuffer) {
-        val _tail = _tail
-        if (_tail == null) {
+        val currentTail = _tail
+        if (currentTail == null) {
             appendChain(chunkBuffer)
             return
         }
 
-        writePacketMerging(_tail, chunkBuffer, pool)
+        writePacketMerging(currentTail, chunkBuffer, pool)
     }
 
     private fun writePacketMerging(tail: ChunkBuffer, foreignStolen: ChunkBuffer, pool: ObjectPool<ChunkBuffer>) {
         tail.commitWrittenUntilIndex(tailPosition)
 
-        val lastSize = tail.readRemaining
         val nextSize = foreignStolen.readRemaining
 
         // at first we evaluate if it is reasonable to merge chunks
         val maxCopySize = PACKET_MAX_COPY_SIZE
-        val appendSize = if (nextSize < maxCopySize && nextSize <= (tail.endGap + tail.writeRemaining)) {
+        val appendSize = if (nextSize < maxCopySize && nextSize <= tail.writeRemaining) {
             nextSize
         } else -1
 
-        val prependSize =
-            if (lastSize < maxCopySize && lastSize <= foreignStolen.startGap && foreignStolen.isExclusivelyOwned()) {
-                lastSize
-            } else -1
-
-        if (appendSize == -1 && prependSize == -1) {
+        if (appendSize == -1) {
             // simply enqueue if there is no reason to merge
             appendChain(foreignStolen)
-        } else if (prependSize == -1 || appendSize <= prependSize) {
-            // do append
-            tail.writeBufferAppend(foreignStolen, tail.writeRemaining + tail.endGap)
-            afterHeadWrite()
-            foreignStolen.cleanNext()?.let { next ->
-                appendChain(next)
-            }
-
-            foreignStolen.release(pool)
-        } else if (appendSize == -1 || prependSize < appendSize) {
-            writePacketSlowPrepend(foreignStolen, tail)
-        } else {
-            throw IllegalStateException("prep = $prependSize, app = $appendSize")
+            return
         }
+
+        tail.writeBufferAtMost(foreignStolen, tail.writeRemaining)
+        afterHeadWrite()
+        foreignStolen.cleanNext()?.let { next ->
+            appendChain(next)
+        }
+
+        foreignStolen.release(pool)
     }
 
     /**
@@ -413,8 +400,6 @@ public abstract class Output internal constructor(
         if (head !== ChunkBuffer.Empty) {
             check(head.next == null)
             head.resetForWrite()
-            head.reserveStartGap(headerSizeHint)
-            head.reserveEndGap(Buffer.ReservedSize)
             tailPosition = head.writePosition
             tailInitialPosition = tailPosition
             tailEndExclusive = head.limit

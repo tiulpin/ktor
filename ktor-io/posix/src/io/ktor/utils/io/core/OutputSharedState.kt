@@ -35,12 +35,6 @@ internal actual class OutputSharedState {
             _tailMemory.value = value
         }
 
-    actual var tailPosition: Int
-        get() = _tailPosition.value
-        set(value) {
-            _tailPosition.value = value
-        }
-
     actual var tailEndExclusive: Int
         get() = _tailEndExclusive.value
         set(value) {

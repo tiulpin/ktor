@@ -50,9 +50,10 @@ public fun Input.readDoubleFallback(): Double {
 
 private inline fun <R> Input.readPrimitive(size: Int, main: (Memory, Int) -> R, fallback: () -> R): R {
     if (headRemaining > size) {
-        val index = headPosition
-        headPosition = index + size
-        return main(headMemory, index)
+        val index = head.readPosition
+        val result = main(head.memory, index)
+        head.discardExact(size)
+        return result
     }
 
     return fallback()

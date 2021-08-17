@@ -1,5 +1,6 @@
 package io.ktor.utils.io
 
+import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.internal.*
@@ -16,22 +17,11 @@ public actual fun ByteChannel(autoFlush: Boolean): ByteChannel {
  * Creates channel for reading from the specified byte array.
  */
 public actual fun ByteReadChannel(content: ByteArray, offset: Int, length: Int): ByteReadChannel {
-    if (content.isEmpty()) return ByteReadChannel.Empty
-    val head = ChunkBuffer.Pool.borrow()
-    var tail = head
+    if (content.isEmpty() || offset >= length) return ByteReadChannel.Empty
 
-    var start = offset
-    val end = start + length
-    while (true) {
-        tail.reserveEndGap(8)
-        val size = minOf(end - start, tail.writeRemaining)
-        (tail as Buffer).writeFully(content, start, size)
-        start += size
-
-        if (start == end) break
-        val current = tail
-        tail = ChunkBuffer.Pool.borrow()
-        current.next = tail
+    val buffer = Memory.of(content, offset, length)
+    val head = ChunkBuffer(buffer, null, null).apply {
+        commitWritten(length - offset)
     }
 
     return ByteChannelJS(head, false).apply { close() }
@@ -48,7 +38,6 @@ public fun ByteReadChannel(content: ArrayBufferView): ByteReadChannel {
     var start = 0
     var remaining = content.byteLength - content.byteOffset
     while (true) {
-        tail.reserveEndGap(8)
         val size = minOf(remaining, tail.writeRemaining)
         tail.writeFully(content, start, size)
         start += size

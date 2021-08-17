@@ -13,8 +13,6 @@ class BufferTest {
         assertEquals(0, Buffer.Empty.capacity)
         assertEquals(0, Buffer.Empty.readRemaining)
         assertEquals(0, Buffer.Empty.writeRemaining)
-        assertEquals(0, Buffer.Empty.startGap)
-        assertEquals(0, Buffer.Empty.endGap)
         assertFalse(Buffer.Empty.canRead())
         assertFalse(Buffer.Empty.canWrite())
 

@@ -36,7 +36,6 @@ private tailrec fun ByteReadPacket.readAsMuchAsPossible(bb: ByteBuffer, copied: 
         readAsMuchAsPossible(bb, copied + available)
     } else {
         current.readFully(bb, destinationCapacity)
-        headPosition = current.readPosition
         copied + destinationCapacity
     }
 }

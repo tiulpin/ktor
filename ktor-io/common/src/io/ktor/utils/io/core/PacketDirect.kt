@@ -20,8 +20,6 @@ internal inline fun Input.read(n: Int = 1, block: (Buffer) -> Unit) {
         }
         if (positionAfter == buffer.writePosition) {
             ensureNext(buffer)
-        } else {
-            headPosition = positionAfter
         }
     }
 }

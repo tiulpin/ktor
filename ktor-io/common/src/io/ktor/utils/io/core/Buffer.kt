@@ -41,16 +41,6 @@ public open class Buffer(public val memory: Memory) {
         }
 
     /**
-     * Start gap is a reserved space in the beginning. The reserved space is usually used to write a packet length
-     * in the case when it's not known before the packet constructed.
-     */
-    public var startGap: Int
-        get() = bufferState.startGap
-        private set(value) {
-            bufferState.startGap = value
-        }
-
-    /**
      * Write position limit. No bytes could be written ahead of this limit. When the limit is less than the [capacity]
      * then this means that there are reserved bytes in the end ([endGap]). Such a reserved space in the end could be used
      * to write size, hash and so on. Also it is useful when several buffers are connected into a chain and some
@@ -62,11 +52,6 @@ public open class Buffer(public val memory: Memory) {
         private set(value) {
             bufferState.limit = value
         }
-
-    /**
-     * Number of bytes reserved in the end.
-     */
-    public inline val endGap: Int get() = capacity - limit
 
     /**
      * Buffer's capacity (including reserved [startGap] and [endGap]. Value for released buffer is unspecified.
@@ -154,76 +139,15 @@ public open class Buffer(public val memory: Memory) {
      * Rewind [readPosition] backward to make [count] bytes available for reading again.
      * @throws IllegalArgumentException when [count] is too big and not enough bytes available before the [readPosition]
      */
-    public fun rewind(count: Int = readPosition - startGap) {
+    public fun rewind(count: Int = readPosition) {
         val newReadPosition = readPosition - count
-        if (newReadPosition < startGap) {
-            rewindFailed(count, readPosition - startGap)
-        }
         readPosition = newReadPosition
-    }
-
-    /**
-     * Reserve [startGap] bytes in the beginning.
-     * May move [readPosition] and [writePosition] if no bytes available for reading.
-     */
-    public fun reserveStartGap(startGap: Int) {
-        require(startGap >= 0) { "startGap shouldn't be negative: $startGap" }
-
-        if (readPosition >= startGap) {
-            this.startGap = startGap
-            return
-        }
-
-        if (readPosition == writePosition) {
-            if (startGap > limit) {
-                startGapReservationFailedDueToLimit(startGap)
-            }
-
-            this.writePosition = startGap
-            this.readPosition = startGap
-            this.startGap = startGap
-            return
-        }
-
-        startGapReservationFailed(startGap)
-    }
-
-    /**
-     * Reserve [endGap] bytes in the end.
-     * Could move [readPosition] and [writePosition] to reserve space but only when no bytes were written or
-     * all written bytes are marked as consumed (were read or discarded).
-     */
-    public fun reserveEndGap(endGap: Int) {
-        require(endGap >= 0) { "endGap shouldn't be negative: $endGap" }
-
-        val newLimit = capacity - endGap
-        if (newLimit >= writePosition) {
-            limit = newLimit
-            return
-        }
-
-        if (newLimit < 0) {
-            endGapReservationFailedDueToCapacity(endGap)
-        }
-        if (newLimit < startGap) {
-            endGapReservationFailedDueToStartGap(endGap)
-        }
-
-        if (readPosition == writePosition) {
-            limit = newLimit
-            readPosition = newLimit
-            writePosition = newLimit
-            return
-        }
-
-        endGapReservationFailedDueToContent(endGap)
     }
 
     /**
      * Marks the whole buffer available for read and no for write
      */
     public fun resetForRead() {
-        startGap = 0
         readPosition = 0
 
         val capacity = capacity
@@ -234,7 +158,7 @@ public open class Buffer(public val memory: Memory) {
      * Marks all capacity writable except the start gap reserved before. The end gap reservation is discarded.
      */
     public fun resetForWrite() {
-        resetForWrite(capacity - startGap)
+        resetForWrite(capacity)
     }
 
     /**
@@ -243,39 +167,13 @@ public open class Buffer(public val memory: Memory) {
      * are considered as [endGap].
      */
     public fun resetForWrite(limit: Int) {
-        val startGap = startGap
-        readPosition = startGap
-        writePosition = startGap
+        readPosition = 0
+        writePosition = 0
         this.limit = limit
-    }
-
-    /**
-     * Forget start/end gap reservations.
-     */
-    internal fun releaseGaps() {
-        releaseStartGap(0)
-        releaseEndGap()
-    }
-
-    internal fun releaseEndGap() {
-        limit = capacity
-    }
-
-    internal fun releaseStartGap(newReadPosition: Int) {
-        require(newReadPosition >= 0) { "newReadPosition shouldn't be negative: $newReadPosition" }
-        require(newReadPosition <= readPosition) {
-            "newReadPosition shouldn't be ahead of the read position: $newReadPosition > $readPosition"
-        }
-
-        readPosition = newReadPosition
-        if (startGap > newReadPosition) {
-            startGap = newReadPosition
-        }
     }
 
     protected open fun duplicateTo(copy: Buffer) {
         copy.limit = limit
-        copy.startGap = startGap
         copy.readPosition = readPosition
         copy.writePosition = writePosition
     }
@@ -347,22 +245,14 @@ public open class Buffer(public val memory: Memory) {
      * Clear buffer's state: read/write positions, gaps and so on. Byte content is not cleaned-up.
      */
     public open fun reset() {
-        releaseGaps()
         resetForWrite()
     }
 
     override fun toString(): String {
-        return "Buffer($readRemaining used, $writeRemaining free, ${startGap + endGap} reserved of $capacity)"
+        return "Buffer[${hashCode()}]($readRemaining used, $writeRemaining free)"
     }
 
     public companion object {
-        /**
-         * Number of bytes usually reserved in the end of chunk
-         * when several instances of [io.ktor.utils.io.core.internal.ChunkBuffer] are connected into a chain (usually inside of [ByteReadPacket]
-         * or [BytePacketBuilder])
-         */
-        public const val ReservedSize: Int = 8
-
         /**
          * The empty buffer singleton: it has zero capacity for read and write.
          */
@@ -420,48 +310,6 @@ internal fun discardFailed(count: Int, readRemaining: Int): Nothing {
 
 internal fun commitWrittenFailed(count: Int, writeRemaining: Int): Nothing {
     throw EOFException("Unable to discard $count bytes: only $writeRemaining available for writing")
-}
-
-internal fun rewindFailed(count: Int, rewindRemaining: Int): Nothing {
-    throw IllegalArgumentException("Unable to rewind $count bytes: only $rewindRemaining could be rewinded")
-}
-
-internal fun Buffer.startGapReservationFailedDueToLimit(startGap: Int): Nothing {
-    if (startGap > capacity) {
-        throw IllegalArgumentException("Start gap $startGap is bigger than the capacity $capacity")
-    }
-
-    throw IllegalStateException(
-        "Unable to reserve $startGap start gap: there are already $endGap bytes reserved in the end"
-    )
-}
-
-internal fun Buffer.startGapReservationFailed(startGap: Int): Nothing {
-    throw IllegalStateException(
-        "Unable to reserve $startGap start gap: " +
-            "there are already $readRemaining content bytes starting at offset $readPosition"
-    )
-}
-
-internal fun Buffer.endGapReservationFailedDueToCapacity(endGap: Int) {
-    throw IllegalArgumentException("End gap $endGap is too big: capacity is $capacity")
-}
-
-internal fun Buffer.endGapReservationFailedDueToStartGap(endGap: Int) {
-    throw IllegalArgumentException(
-        "End gap $endGap is too big: there are already $startGap bytes reserved in the beginning"
-    )
-}
-
-internal fun Buffer.endGapReservationFailedDueToContent(endGap: Int) {
-    throw IllegalArgumentException(
-        "Unable to reserve end gap $endGap:" +
-            " there are already $readRemaining content bytes at offset $readPosition"
-    )
-}
-
-internal fun Buffer.restoreStartGap(size: Int) {
-    releaseStartGap(readPosition - size)
 }
 
 public class InsufficientSpaceException(message: String = "Not enough free space") : Exception(message) {

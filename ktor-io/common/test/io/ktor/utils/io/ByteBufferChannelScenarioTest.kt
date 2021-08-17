@@ -465,6 +465,7 @@ open class ByteBufferChannelScenarioTest : ByteChannelTestBase(true) {
     fun testWriteByteByByte() = runTest {
         ch.writeByte(1)
         ch.flush()
+        assertEquals(1, ch.availableForRead)
         ch.writeByte(2)
         ch.flush()
 

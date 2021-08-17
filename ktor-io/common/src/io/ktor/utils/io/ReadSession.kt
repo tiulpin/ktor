@@ -87,7 +87,7 @@ internal suspend fun ByteReadChannel.requestBuffer(desiredSize: Int): Buffer? {
     }
 
     if (readSession != null) {
-        val buffer = readSession.request(desiredSize.coerceAtMost(Buffer.ReservedSize))
+        val buffer = readSession.request(desiredSize)
         if (buffer != null) {
             return buffer
         }
@@ -135,9 +135,9 @@ private suspend fun ByteReadChannel.requestBufferFallback(desiredSize: Int): Chu
 
 internal interface HasReadSession {
     @Suppress("DEPRECATION")
-    public fun startReadSession(): SuspendableReadSession
+    fun startReadSession(): SuspendableReadSession
 
-    public fun endReadSession()
+    fun endReadSession()
 }
 
 @Suppress("DEPRECATION", "NOTHING_TO_INLINE")

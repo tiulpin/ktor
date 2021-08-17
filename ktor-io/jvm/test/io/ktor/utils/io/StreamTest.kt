@@ -38,12 +38,15 @@ class StreamTest {
         val consumed = ByteArrayOutputStream()
         val buffer = ByteArray(8192)
         input.takeWhile { chunk ->
-            val size = chunk.readAvailable(buffer)
-            consumed.write(buffer, 0, size)
+            while (chunk.canRead()) {
+                val size = chunk.readAvailable(buffer)
+                consumed.write(buffer, 0, size)
+            }
             true
         }
 
-        assertTrue { content.contentEquals(consumed.toByteArray()) }
+        val result = consumed.toByteArray()
+        assertTrue { content.contentEquals(result) }
     }
 
     @Test

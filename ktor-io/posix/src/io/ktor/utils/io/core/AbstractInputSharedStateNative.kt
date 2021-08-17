@@ -5,7 +5,6 @@
 
 package io.ktor.utils.io.core
 
-import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.internal.*
 import kotlinx.atomicfu.*
 
@@ -14,10 +13,7 @@ internal actual class InputSharedState actual constructor(
     remaining: Long
 ) {
     private val _head: AtomicRef<ChunkBuffer> = atomic(head)
-    private val _headMemory: AtomicRef<Memory> = atomic(head.memory)
-    private val _headPosition: AtomicInt = atomic(head.readPosition)
-    private val _headEndExclusive: AtomicInt = atomic(head.writePosition)
-    private val _tailRemaining: AtomicLong = atomic(remaining - (_headEndExclusive.value - _headPosition.value))
+    private val _tailRemaining: AtomicLong = atomic(head.next?.remainingAll() ?: 0L)
 
     actual var head: ChunkBuffer
         get() = _head.value
@@ -29,23 +25,5 @@ internal actual class InputSharedState actual constructor(
         get() = _tailRemaining.value
         set(value) {
             _tailRemaining.value = value
-        }
-
-    actual var headMemory: Memory
-        get() = _headMemory.value
-        set(value) {
-            _headMemory.value = value
-        }
-
-    actual var headPosition: Int
-        get() = _headPosition.value
-        set(value) {
-            _headPosition.value = value
-        }
-
-    actual var headEndExclusive: Int
-        get() = _headEndExclusive.value
-        set(value) {
-            _headEndExclusive.value = value
         }
 }

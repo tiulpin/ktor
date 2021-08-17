@@ -50,8 +50,6 @@ internal fun Input.completeReadHead(current: ChunkBuffer) {
     when {
         current === this -> return
         !current.canRead() -> ensureNext(current)
-        current.endGap < Buffer.ReservedSize -> fixGapAfterRead(current)
-        else -> headPosition = current.readPosition
     }
 }
 

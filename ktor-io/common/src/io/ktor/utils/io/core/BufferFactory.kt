@@ -5,7 +5,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import kotlin.native.concurrent.*
 
-internal const val DEFAULT_BUFFER_SIZE: Int = 4096
+internal const val DEFAULT_BUFFER_SIZE: Int = 65536
 
 /**
  * Invoke [block] function with a temporary [Buffer] instance of the specified [size] in bytes.

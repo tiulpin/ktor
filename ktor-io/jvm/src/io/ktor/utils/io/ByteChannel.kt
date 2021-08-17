@@ -1,7 +1,6 @@
 package io.ktor.utils.io
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.Buffer
 import io.ktor.utils.io.core.internal.*
 import java.nio.*
 
@@ -9,7 +8,9 @@ import java.nio.*
  * Creates channel for reading from the specified byte buffer.
  */
 public fun ByteReadChannel(content: ByteBuffer): ByteReadChannel = ByteChannelSequentialJVM(
-    ChunkBuffer(content), autoFlush = true
+    ChunkBuffer(content).apply {
+        commitWritten(content.remaining())
+    }, autoFlush = true
 ).apply { close() }
 
 /**
@@ -23,24 +24,12 @@ public actual fun ByteChannel(autoFlush: Boolean): ByteChannel = ByteChannelSequ
  * Creates channel for reading from the specified byte array.
  */
 public actual fun ByteReadChannel(content: ByteArray, offset: Int, length: Int): ByteReadChannel {
-    if (content.isEmpty()) return ByteReadChannel.Empty
-    val head = ChunkBuffer.Pool.borrow()
-    var tail = head
+    if (content.isEmpty() || offset >= length) return ByteReadChannel.Empty
 
-    var start = offset
-    val end = start + length
-    while (true) {
-        tail.reserveEndGap(8)
-        val size = minOf(end - start, tail.writeRemaining)
-        (tail as Buffer).writeFully(content, start, size)
-        start += size
-
-        if (start == end) break
-        val current = tail
-        tail = ChunkBuffer.Pool.borrow()
-        current.next = tail
+    val buffer = ByteBuffer.wrap(content, offset, length)
+    val head = ChunkBuffer(buffer).apply {
+        commitWritten(length - offset)
     }
-
     return ByteChannelSequentialJVM(head, false).apply { close() }
 }
 

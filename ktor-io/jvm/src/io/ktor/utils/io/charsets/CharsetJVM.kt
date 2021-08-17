@@ -81,8 +81,6 @@ public actual fun CharsetEncoder.encodeUTF8(input: ByteReadPacket, dst: Output) 
                     } else false
                 }
 
-                input.headPosition = chunk.readPosition
-
                 cb.flip()
 
                 var writeSize = 1
@@ -231,11 +229,11 @@ public actual fun CharsetDecoder.decodeExactBytes(input: Input, inputLength: Int
     if (input.headRemaining >= inputLength) {
         // if we have a packet or a buffered input with the first head containing enough bytes
         // then we can try fast-path
-        if (input.headMemory.buffer.hasArray()) {
+        if (input.head.memory.buffer.hasArray()) {
             // the most performant way is to use String ctor of ByteArray
             // on JVM9+ with string compression enabled it will do System.arraycopy and lazy decoding that is blazing fast
             // on older JVMs it is still the fastest way
-            val bb = input.headMemory.buffer
+            val bb = input.head.memory.buffer
             val text = String(
                 bb.array(),
                 bb.arrayOffset() + bb.position() + input.head.readPosition,
@@ -256,7 +254,7 @@ public actual fun CharsetDecoder.decodeExactBytes(input: Input, inputLength: Int
 
 private fun CharsetDecoder.decodeImplByteBuffer(input: Input, inputLength: Int): String {
     val cb = CharBuffer.allocate(inputLength)
-    val bb = input.headMemory.slice(input.head.readPosition, inputLength).buffer
+    val bb = input.head.memory.slice(input.head.readPosition, inputLength).buffer
 
     val rc = decode(bb, cb, true)
     if (rc.isMalformed || rc.isUnmappable) rc.throwExceptionWrapped()

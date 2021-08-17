@@ -91,8 +91,8 @@ private suspend fun writeBufferSuspend(session: WriterSuspendSession, desiredSpa
     return session.request(desiredSpace) ?: session.request(1)
 }
 
-private fun writeBufferFallback(): Buffer? {
-    return ChunkBuffer.Pool.borrow().also { it.resetForWrite(); it.reserveEndGap(Buffer.ReservedSize) }
+private fun writeBufferFallback(): Buffer {
+    return ChunkBuffer.Pool.borrow().also { it.resetForWrite() }
 }
 
 @Suppress("DEPRECATION", "NOTHING_TO_INLINE")

@@ -82,6 +82,8 @@ private inline fun Output.writePrimitiveFallbackTemplate(
     writeOperation: (Buffer) -> Unit
 ): Boolean {
     val tail = prepareWriteHead(componentSize)
+    if (tail.writeRemaining < componentSize) return false
+
     writeOperation(tail)
     afterHeadWrite()
     return true

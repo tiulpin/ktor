@@ -13,8 +13,6 @@ class ReadBufferTest {
 
     private val buffer = pool.borrow().apply {
         resetForWrite()
-        reserveStartGap(8)
-        reserveEndGap(8)
 
         repeat(writeRemaining) { index ->
             writeByte(charForIndex(index).code.toByte())
@@ -92,9 +90,6 @@ class ReadBufferTest {
             if (size <= buffer.readRemaining) {
                 val dst = pool.borrow()
                 try {
-                    dst.reserveStartGap(1)
-                    dst.reserveEndGap(2)
-
                     assertEquals(initialBufferSize - offset, buffer.readRemaining)
                     val rc = buffer.readAvailable(dst, size)
                     assertEquals(size, rc)
@@ -118,9 +113,6 @@ class ReadBufferTest {
             if (size <= buffer.readRemaining) {
                 val dst = pool.borrow()
                 try {
-                    dst.reserveStartGap(1)
-                    dst.reserveEndGap(2)
-
                     assertEquals(initialBufferSize - offset, buffer.readRemaining)
                     buffer.readFully(dst, size)
 
@@ -192,9 +184,6 @@ class ReadBufferTest {
             if (size <= buffer.readRemaining) {
                 val dst = pool.borrow()
                 try {
-                    dst.reserveStartGap(1)
-                    dst.reserveEndGap(2)
-
                     assertEquals(initialPacketSize - offset, packet.remaining)
                     val rc = packet.readAvailable(dst, size)
                     assertEquals(size, rc)
@@ -218,9 +207,6 @@ class ReadBufferTest {
             if (size <= buffer.readRemaining) {
                 val dst = pool.borrow()
                 try {
-                    dst.reserveStartGap(1)
-                    dst.reserveEndGap(2)
-
                     assertEquals(initialPacketSize - offset, packet.remaining)
                     packet.readFully(dst, size)
 

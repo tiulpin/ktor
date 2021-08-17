@@ -15,8 +15,6 @@ internal actual class OutputSharedState {
 
     actual var tailMemory: Memory = Memory.Empty
 
-    actual var tailPosition: Int = 0
-
     actual var tailEndExclusive: Int = 0
 
     actual var tailInitialPosition: Int = 0

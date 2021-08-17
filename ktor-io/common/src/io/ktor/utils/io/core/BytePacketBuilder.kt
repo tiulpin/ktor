@@ -91,6 +91,6 @@ public class BytePacketBuilder(
     }
 
     override fun toString(): String {
-        return "BytePacketBuilder($size bytes written)"
+        return "BytePacketBuilder[${hashCode()}]($size bytes written)"
     }
 }

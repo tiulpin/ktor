@@ -12,7 +12,7 @@ internal expect class OutputSharedState() {
     var tail: ChunkBuffer?
 
     var tailMemory: Memory
-    var tailPosition: Int
+
     var tailEndExclusive: Int
 
     var tailInitialPosition: Int

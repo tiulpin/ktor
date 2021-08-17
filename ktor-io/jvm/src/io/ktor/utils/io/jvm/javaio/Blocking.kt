@@ -283,7 +283,6 @@ private abstract class BlockingAdapter(val parent: Job? = null) {
     }
 
     protected fun finish(rc: Int) {
-        println("FINISH $rc")
         result.value = rc
     }
 }

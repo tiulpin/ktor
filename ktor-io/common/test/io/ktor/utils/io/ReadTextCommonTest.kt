@@ -152,7 +152,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc6.toByte())
         segment2.writeByte(0x86.toByte())
@@ -169,7 +168,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xe2.toByte())
         segment2.writeByte(0x82.toByte())
@@ -187,7 +185,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc6.toByte())
         segment1.writeByte(0x86.toByte())
@@ -209,7 +206,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         while (segment1.writeRemaining > 1) {
             segment1.writeByte(0)
@@ -231,7 +227,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc6.toByte())
         segment2.writeByte(0x86.toByte())
@@ -247,7 +242,6 @@ class ReadTextCommonTest {
         val segment1 = pool.borrow()
         val segment2 = pool.borrow()
         segment1.next = segment2
-        segment1.reserveEndGap(8)
 
         segment1.writeByte(0xc0.toByte()) // overlong illegal utf8 sequence
         segment2.writeByte(0x81.toByte())
@@ -270,7 +264,6 @@ class ReadTextCommonTest {
         val second = ChunkBuffer.NoPool.borrow()
 
         first.resetForWrite()
-        first.reserveEndGap(8)
         second.resetForWrite()
         first.next = second
 
@@ -291,7 +284,6 @@ class ReadTextCommonTest {
         first.resetForWrite()
         second.resetForWrite()
         first.next = second
-        first.reserveEndGap(8)
 
         first.writeByte(0xe0.toByte())
         second.writeByte(0xaf.toByte())
@@ -312,7 +304,6 @@ class ReadTextCommonTest {
         first.resetForWrite()
         second.resetForWrite()
         first.next = second
-        first.reserveEndGap(8)
 
         first.writeByte(0xe0.toByte())
         first.writeByte(0xaf.toByte())

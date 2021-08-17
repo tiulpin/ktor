@@ -59,15 +59,17 @@ public open class ChunkBuffer(
     }
 
     public open fun release(pool: ObjectPool<ChunkBuffer>) {
-        if (release()) {
-            val origin = origin
-            if (origin != null) {
-                unlink()
-                origin.release(pool)
-            } else {
-                val poolToUse = parentPool ?: pool
-                poolToUse.recycle(this)
-            }
+        if (!release()) {
+            return
+        }
+
+        val origin = origin
+        if (origin != null) {
+            unlink()
+            origin.release(pool)
+        } else {
+            val poolToUse = parentPool ?: pool
+            poolToUse.recycle(this)
         }
     }
 

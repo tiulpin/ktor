@@ -17,9 +17,6 @@ class TakeWhileTest {
         chunk1.resetForWrite()
         chunk2.resetForWrite()
 
-        chunk1.reserveEndGap(8)
-        chunk2.reserveEndGap(8)
-
         chunk1.next = chunk2
 
         chunks.add(chunk1)
@@ -75,9 +72,11 @@ class TakeWhileTest {
         assertEquals(1, chunk1.readRemaining)
         assertEquals(10, chunk2.readRemaining)
 
-        pkt.takeWhileSize(8) { it.discardExact(7); 0 }
+        pkt.takeWhileSize(8) {
+            it.discardExact(7)
+            return@takeWhileSize 0
+        }
 
-        assertSame(chunk2, pkt.head)
         assertEquals(4, pkt.remaining)
 
         pkt.takeWhileSize(4) { 0 }

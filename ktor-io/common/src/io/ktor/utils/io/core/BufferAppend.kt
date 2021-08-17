@@ -5,12 +5,8 @@ package io.ktor.utils.io.core
  * @return number of bytes copied
  * @throws IllegalArgumentException if not enough space including end gap
  */
-internal fun Buffer.writeBufferAppend(other: Buffer, maxSize: Int): Int {
+internal fun Buffer.writeBufferAtMost(other: Buffer, maxSize: Int): Int {
     val size = minOf(other.readRemaining, maxSize)
-
-    if (writeRemaining <= size) {
-        writeBufferAppendUnreserve(size)
-    }
 
     return write { dst, dstOffset, _ ->
         other.read { src, srcOffset, _ ->
@@ -37,19 +33,5 @@ internal fun Buffer.writeBufferPrepend(other: Buffer): Int {
     val newReadPosition = readPosition - size
     other.memory.copyTo(memory, other.readPosition, size, newReadPosition)
     other.discardExact(size)
-    releaseStartGap(newReadPosition)
-
     return size
-}
-
-private fun Buffer.writeBufferAppendUnreserve(writeSize: Int) {
-    if (writeRemaining + endGap < writeSize) {
-        throw IllegalArgumentException("Can't append buffer: not enough free space at the end")
-    }
-    val newWritePosition = writePosition + writeSize
-    val overrunSize = newWritePosition - limit
-
-    if (overrunSize > 0) {
-        releaseEndGap()
-    }
 }

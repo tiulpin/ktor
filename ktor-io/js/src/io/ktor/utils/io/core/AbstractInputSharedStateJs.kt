@@ -5,18 +5,12 @@
 
 package io.ktor.utils.io.core
 
-import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.internal.*
 
 internal actual class InputSharedState actual constructor(
     actual var head: ChunkBuffer,
     remaining: Long
 ) {
-    actual var headMemory: Memory = head.memory
-
-    actual var headPosition: Int = head.readPosition
-
-    actual var headEndExclusive: Int = head.writePosition
-
-    actual var tailRemaining: Long = remaining - (headEndExclusive - headPosition)
+    actual var tailRemaining: Long =  head.next?.remainingAll() ?: 0L
 }
+

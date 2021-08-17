@@ -35,4 +35,6 @@ internal class InputStreamAsInput(
     }
 }
 
-public fun InputStream.asInput(pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): Input = InputStreamAsInput(this, pool)
+public fun InputStream.asInput(
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): Input = InputStreamAsInput(this, pool)
