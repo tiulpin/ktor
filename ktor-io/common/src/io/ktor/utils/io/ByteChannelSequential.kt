@@ -53,6 +53,7 @@ public abstract class ByteChannelSequentialBase(
     private var _totalBytesRead: Long
         get() = state.totalBytesRead
         set(value) {
+            check(value <= _totalBytesWritten) { "Invalid read count $value in $this. Write: ${_totalBytesWritten}" }
             state.totalBytesRead = value
         }
 
@@ -61,6 +62,7 @@ public abstract class ByteChannelSequentialBase(
     private var _totalBytesWritten: Long
         get() = state.totalBytesWritten
         set(value) {
+            check(value >= _totalBytesRead){ "Invalid write count $value in $this. Read: ${_totalBytesRead}" }
             state.totalBytesWritten = value
         }
 
@@ -72,6 +74,10 @@ public abstract class ByteChannelSequentialBase(
     private val flushMutex = SynchronizedObject()
     private val flushBuffer: BytePacketBuilder = BytePacketBuilder()
     private val channelJob = Job()
+
+    init {
+        _totalBytesWritten += initial.readRemaining
+    }
 
     @OptIn(InternalCoroutinesApi::class)
     override fun attachJob(job: Job) {
@@ -410,11 +416,11 @@ public abstract class ByteChannelSequentialBase(
         val remaining = limit - builder.size
 
         return if (remaining == 0L || isClosedForRead) {
-            afterRead(remaining.toInt())
+            afterRead(size.toInt())
             ensureNotFailed(builder)
             builder.build()
         } else {
-            readRemainingSuspend(builder, limit)
+            readRemainingSuspend(builder, remaining)
         }
     }
 

@@ -180,7 +180,7 @@ public actual fun CharsetDecoder.decodeExactBytes(input: Input, inputLength: Int
         val decoder = Decoder(charset._name, true)
 
         val head = input.head
-        val view = input.headMemory.view
+        val view = input.head.memory.view
 
         val text = decodeWrap {
             val subView: ArrayBufferView = when {

@@ -20,7 +20,7 @@ public actual fun ByteReadChannel(content: ByteArray, offset: Int, length: Int):
     if (content.isEmpty() || offset >= length) return ByteReadChannel.Empty
 
     val buffer = Memory.of(content, offset, length)
-    val head = ChunkBuffer(buffer, null, null).apply {
+    val head = ChunkBuffer(buffer, null, ChunkBuffer.NoPool).apply {
         commitWritten(length - offset)
     }
 

@@ -156,7 +156,6 @@ public actual fun CharsetEncoder.encodeUTF8(input: ByteReadPacket, dst: Output) 
                         readSize++
                         writeSize = 8
                     } else {
-                        input.headPosition = srcView.readPosition
                         readSize = 1
                         writeSize = 1
                     }

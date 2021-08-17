@@ -13,7 +13,6 @@ class ChunkBufferNativeTest {
 
     @BeforeTest
     fun prepare() {
-        buffer.releaseGaps()
         buffer.resetForWrite()
     }
 
@@ -70,7 +69,6 @@ class ChunkBufferNativeTest {
     @Test
     fun testReadDirectWithEndGap() {
         var result: Int
-        buffer.reserveEndGap(8)
         buffer.writeByte(9)
         buffer.writeByte(10)
         buffer.readDirect { ptr ->
@@ -84,7 +82,6 @@ class ChunkBufferNativeTest {
     @Test
     fun testReadDirectWithStartGap() {
         var result: Int
-        buffer.reserveStartGap(8)
         buffer.writeByte(11)
         buffer.writeByte(12)
         buffer.readDirect { ptr ->
@@ -124,8 +121,6 @@ class ChunkBufferNativeTest {
 
     @Test
     fun testWriteDirectWithReserve() {
-        buffer.reserveEndGap(8)
-
         buffer.writeDirect { ptr ->
             ptr.setInt8(0, 5)
             ptr.setInt8(1, 6)
@@ -139,8 +134,6 @@ class ChunkBufferNativeTest {
 
     @Test
     fun testWriteDirectWithReservedStart() {
-        buffer.reserveStartGap(8)
-
         buffer.writeDirect { ptr ->
             ptr.setInt8(0, 3)
             ptr.setInt8(1, 4)
@@ -154,9 +147,6 @@ class ChunkBufferNativeTest {
 
     @Test
     fun testCombinedReadAndWrite() {
-        buffer.reserveStartGap(4)
-        buffer.reserveEndGap(1)
-
         buffer.writeByte(2)
         var rc = buffer.writeDirect { view ->
             assertTrue { view.byteLength > 0 }

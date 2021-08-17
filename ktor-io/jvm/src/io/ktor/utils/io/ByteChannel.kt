@@ -8,7 +8,7 @@ import java.nio.*
  * Creates channel for reading from the specified byte buffer.
  */
 public fun ByteReadChannel(content: ByteBuffer): ByteReadChannel = ByteChannelSequentialJVM(
-    ChunkBuffer(content).apply {
+    ChunkBuffer(content.slice()).apply {
         commitWritten(content.remaining())
     }, autoFlush = true
 ).apply { close() }

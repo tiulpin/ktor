@@ -7,7 +7,7 @@ import io.ktor.utils.io.pool.*
 import java.nio.*
 import kotlin.contracts.*
 
-public fun ChunkBuffer(buffer: ByteBuffer, pool: ObjectPool<ChunkBuffer>? = null): ChunkBuffer =
+public fun ChunkBuffer(buffer: ByteBuffer, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.NoPool): ChunkBuffer =
     ChunkBuffer(Memory.of(buffer), null, pool)
 
 /**

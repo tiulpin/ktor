@@ -35,8 +35,7 @@ public open class ByteChannelSequentialJVM(
     private suspend fun writeFullySuspend(src: ByteBuffer) {
         while (src.hasRemaining()) {
             awaitAtLeastNBytesAvailableForWrite(1)
-            val count = tryWriteAvailable(src)
-            afterWrite(count)
+            tryWriteAvailable(src)
         }
     }
 
@@ -207,6 +206,7 @@ public open class ByteChannelSequentialJVM(
             result = it.position() - position
         }
 
+        afterWrite(result)
         return result
     }
 

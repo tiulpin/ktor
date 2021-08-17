@@ -9,7 +9,6 @@ import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.debug.*
 import kotlinx.coroutines.debug.junit4.*
 import org.junit.*
 import java.io.*
@@ -17,6 +16,7 @@ import java.nio.*
 import java.util.zip.*
 import kotlin.test.*
 import kotlin.test.Test
+import kotlin.text.toByteArray
 
 class DeflaterReadChannelTest : CoroutineScope {
     private val testJob = Job()
@@ -75,7 +75,8 @@ class DeflaterReadChannelTest : CoroutineScope {
                 append("The quick brown fox jumps over the lazy dog")
             }
         }
-        val bb = ByteBuffer.wrap(text.toByteArray(Charsets.ISO_8859_1))
+        val origin = ByteBuffer.wrap(text.toByteArray(Charsets.ISO_8859_1))
+        val readOnlyBB = origin.asReadOnlyBuffer()
 
         for (
             step in generateSequence(1) { it * 2 }
@@ -83,11 +84,11 @@ class DeflaterReadChannelTest : CoroutineScope {
                 .takeWhile { it <= 8192 }
                 .flatMap { sequenceOf(it, it - 1, it + 1) }
         ) {
-            bb.clear()
-            testReadChannel(text, asyncOf(bb))
+            readOnlyBB.clear()
+            testReadChannel(text, asyncOf(readOnlyBB))
 
-            bb.clear()
-            testWriteChannel(text, asyncOf(bb))
+            readOnlyBB.clear()
+            testWriteChannel(text, asyncOf(readOnlyBB))
         }
     }
 

@@ -13,11 +13,11 @@ import kotlin.native.concurrent.*
 internal val MAX_SIZE: size_t = size_t.MAX_VALUE
 
 public fun ChunkBuffer(ptr: CPointer<*>, lengthInBytes: Int, origin: ChunkBuffer?): ChunkBuffer {
-    return ChunkBuffer(Memory.of(ptr, lengthInBytes), origin, null)
+    return ChunkBuffer(Memory.of(ptr, lengthInBytes), origin, ChunkBuffer.NoPoolManuallyManaged)
 }
 
-public fun ChunkBuffer(ptr: CPointer<*>, lengthInBytes: Long, origin: ChunkBuffer?): ChunkBuffer {
-    return ChunkBuffer(Memory.of(ptr, lengthInBytes), origin, null)
+public fun ChunkBuffer(ptr: CPointer<*>, lengthInBytes: Long, origin: ChunkBuffer): ChunkBuffer {
+    return ChunkBuffer(Memory.of(ptr, lengthInBytes), origin, ChunkBuffer.NoPoolManuallyManaged)
 }
 
 @ThreadLocal

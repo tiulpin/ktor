@@ -641,7 +641,6 @@ public final class io/ktor/utils/io/concurrent/SharedJvmKt {
 
 public class io/ktor/utils/io/core/Buffer {
 	public static final field Companion Lio/ktor/utils/io/core/Buffer$Companion;
-	public static final field ReservedSize I
 	public synthetic fun <init> (Ljava/nio/ByteBuffer;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun commitWritten (I)V
 	public final fun commitWrittenUntilIndex (I)Z
@@ -651,17 +650,13 @@ public class io/ktor/utils/io/core/Buffer {
 	protected fun duplicateTo (Lio/ktor/utils/io/core/Buffer;)V
 	public final fun getAttachment ()Ljava/lang/Object;
 	public final fun getCapacity ()I
-	public final fun getEndGap ()I
 	public final fun getLimit ()I
 	public final fun getMemory-SK3TCg8 ()Ljava/nio/ByteBuffer;
 	public final fun getReadPosition ()I
 	public final fun getReadRemaining ()I
-	public final fun getStartGap ()I
 	public final fun getWritePosition ()I
 	public final fun getWriteRemaining ()I
 	public final fun readByte ()B
-	public final fun reserveEndGap (I)V
-	public final fun reserveStartGap (I)V
 	public fun reset ()V
 	public final fun resetForRead ()V
 	public final fun resetForWrite ()V

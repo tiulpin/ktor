@@ -9,7 +9,7 @@ import io.ktor.utils.io.pool.*
 import io.ktor.utils.io.pool.ByteBufferPool
 import java.nio.*
 
-internal const val DEFAULT_BUFFER_SIZE = 4098
+internal const val DEFAULT_BUFFER_SIZE = 64 * 1024
 internal const val DEFAULT_KTOR_POOL_SIZE = 2048
 
 /**

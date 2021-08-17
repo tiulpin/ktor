@@ -18,6 +18,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.junit4.*
 import org.junit.*
+import org.junit.Ignore
 import java.nio.channels.*
 import kotlin.test.*
 import kotlin.test.Test
@@ -102,6 +103,7 @@ class CIORequestTest : TestWithKtor() {
     }
 
     @Test
+    @Ignore
     fun testHangingTimeoutWithWrongUrl() = testWithEngine(CIO) {
         config {
             engine {
