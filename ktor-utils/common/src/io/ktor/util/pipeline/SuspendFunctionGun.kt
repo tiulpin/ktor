@@ -13,12 +13,9 @@ import kotlin.coroutines.intrinsics.*
 
 internal class SuspendFunctionGun<TSubject : Any, TContext : Any>(
     initial: TSubject,
-    override val context: TContext,
+    context: TContext,
     private val blocks: List<PipelineInterceptorFunction<TSubject, TContext>>
-) : PipelineContext<TSubject, TContext>,
-    @Suppress("DEPRECATION")
-    PipelineExecutor<TSubject>,
-    CoroutineScope {
+) : PipelineContext<TSubject, TContext>(context) {
 
     override val coroutineContext: CoroutineContext get() = continuation.context
 

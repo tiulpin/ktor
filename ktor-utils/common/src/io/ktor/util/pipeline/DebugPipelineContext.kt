@@ -14,14 +14,11 @@ import kotlin.coroutines.*
  */
 @ContextDsl
 internal class DebugPipelineContext<TSubject : Any, TContext : Any> constructor(
-    override val context: TContext,
+    context: TContext,
     private val interceptors: List<PipelineInterceptorFunction<TSubject, TContext>>,
     subject: TSubject,
     override val coroutineContext: CoroutineContext
-) : PipelineContext<TSubject, TContext>,
-    @Suppress("DEPRECATION")
-    PipelineExecutor<TSubject> {
-
+) : PipelineContext<TSubject, TContext>(context) {
     /**
      * Subject of this pipeline execution
      */

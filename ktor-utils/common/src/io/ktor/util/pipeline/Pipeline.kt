@@ -215,8 +215,8 @@ public open class Pipeline<TSubject : Any, TContext : Any>(
         context: TContext,
         subject: TSubject,
         coroutineContext: CoroutineContext
-    ): PipelineExecutor<TSubject> =
-        pipelineExecutorFor(context, sharedInterceptorsList(), subject, coroutineContext, developmentMode)
+    ): PipelineContext<TSubject, TContext> =
+        pipelineContextFor(context, sharedInterceptorsList(), subject, coroutineContext, developmentMode)
 
     private fun findPhase(phase: PipelinePhase): PhaseContent<TSubject, TContext>? {
         val phasesList = phasesRaw
