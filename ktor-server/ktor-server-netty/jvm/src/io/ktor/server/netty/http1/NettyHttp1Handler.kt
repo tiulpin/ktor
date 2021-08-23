@@ -115,6 +115,7 @@ internal class NettyHttp1Handler(
 
     @Suppress("OverridingDeprecatedMember")
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+        println("IO Operation failed: $cause")
         if (cause is IOException || cause is ChannelIOException) {
             environment.application.log.debug("I/O operation failed", cause)
             handlerJob.cancel()
