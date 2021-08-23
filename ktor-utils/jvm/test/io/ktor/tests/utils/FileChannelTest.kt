@@ -5,9 +5,12 @@
 package io.ktor.tests.utils
 
 import io.ktor.util.cio.*
+import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
+import kotlinx.coroutines.*
 import org.junit.*
 import java.io.*
+import java.nio.file.*
 import kotlin.test.*
 import kotlin.test.Test
 
@@ -66,5 +69,19 @@ class FileChannelTest {
         temp.writeBytes(byteArrayOf(7, 8, 9))
 
         assertEquals(byteArrayOf(7, 8, 9).toList(), temp.readChannel().toInputStream().use { it.readBytes().toList() })
+    }
+
+    @Test
+    fun testWriteChannel() = runBlocking {
+        val expectedBytes: ByteArray = File("../gradle/wrapper/gradle-wrapper.jar").readBytes()
+
+        val folder = Files.createTempDirectory("test-files").toFile()
+        repeat(1000) {
+            val file = File(folder, "actual-$it.jar")
+            val content = ByteReadChannel(expectedBytes)
+            content.copyAndClose(file.writeChannel())
+            val actualBytes = file.readBytes()
+            assertEquals(expectedBytes.size, actualBytes.size)
+        }
     }
 }
