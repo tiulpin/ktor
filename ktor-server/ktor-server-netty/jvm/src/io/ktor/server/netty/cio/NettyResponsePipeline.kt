@@ -81,9 +81,7 @@ internal class NettyResponsePipeline constructor(
         return future
     }
 
-    private fun hasNextResponseMessage(): Boolean {
-        return false
-    }
+    private fun hasNextResponseMessage(): Boolean = currentResponse?.next != null
 
     private suspend fun finishCall(call: NettyApplicationCall, lastMessage: Any?, lastFuture: ChannelFuture) {
         val prepareForClose = !call.request.keepAlive || call.response.isUpgradeResponse()
@@ -264,23 +262,3 @@ internal class NettyResponsePipeline constructor(
 @OptIn(InternalAPI::class)
 private fun NettyApplicationResponse.isUpgradeResponse() =
     status()?.value == HttpStatusCode.SwitchingProtocols.value
-
-@Suppress("KDocMissingDocumentation")
-@InternalAPI
-public sealed class Writer {
-    public open val requiresContextClose: Boolean get() = true
-    public abstract fun transform(buf: ByteBuf, last: Boolean): Any
-    public abstract fun endOfStream(lastTransformed: Boolean): Any?
-
-    public object Http2 : Writer() {
-        override val requiresContextClose: Boolean get() = false
-
-        override fun transform(buf: ByteBuf, last: Boolean): Any {
-            return DefaultHttp2DataFrame(buf, last)
-        }
-
-        override fun endOfStream(lastTransformed: Boolean): Any? {
-            return if (lastTransformed) null else DefaultHttp2DataFrame(true)
-        }
-    }
-}
