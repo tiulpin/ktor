@@ -8,14 +8,12 @@ import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.netty.cio.*
 import io.ktor.server.response.*
 import io.ktor.util.*
-import io.ktor.utils.io.*
 import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.handler.codec.http.*
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 @OptIn(EngineAPI::class, InternalAPI::class)
@@ -77,41 +75,7 @@ internal class NettyHttp1ApplicationResponse constructor(
     }
 
     override suspend fun respondUpgrade(upgrade: OutgoingContent.ProtocolUpgrade) {
-        val nettyContext = context
-        val nettyChannel = nettyContext.channel()
-        val userAppContext = userContext + NettyDispatcher.CurrentContext(nettyContext)
-
-        val bodyHandler = TODO() // nettyContext.pipeline().get(RequestBodyHandler::class.java)
-        val upgradedReadChannel = TODO() // bodyHandler.upgrade()
-
-        val upgradedWriteChannel = ByteChannel()
-        sendResponse(chunked = false, content = upgradedWriteChannel)
-
-        with(nettyChannel.pipeline()) {
-            if (get(NettyHttp1Handler::class.java) != null) {
-                remove(NettyHttp1Handler::class.java)
-                addFirst(NettyDirectDecoder())
-            } else {
-                cancel()
-                val cause = CancellationException("HTTP upgrade has been cancelled")
-                upgradedWriteChannel.cancel(cause)
-                bodyHandler.close()
-                throw cause
-            }
-        }
-
-        val job = upgrade.upgrade(upgradedReadChannel, upgradedWriteChannel, engineContext, userAppContext)
-
-        job.invokeOnCompletion {
-            upgradedWriteChannel.close()
-            bodyHandler.close()
-            upgradedReadChannel.cancel()
-        }
-
-        (call as NettyApplicationCall).responseWriteJob.join()
-        job.join()
-
-        context.channel().close()
+        TODO()
     }
 
     private fun setChunked(message: HttpResponse) {
