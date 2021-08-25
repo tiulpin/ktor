@@ -28,6 +28,9 @@ public abstract class NettyApplicationCall(
 
     private val messageReleased = atomic(false)
 
+    internal var next: NettyApplicationCall? = null
+    internal var last: NettyApplicationCall? = null
+
     internal suspend fun finish() {
         try {
             response.ensureResponseSent()
@@ -68,5 +71,16 @@ public abstract class NettyApplicationCall(
         if (messageReleased.compareAndSet(expect = false, update = true)) {
             ReferenceCountUtil.release(requestMessage)
         }
+    }
+
+    internal fun scheduleNext(call: NettyApplicationCall) {
+        if (next == null) {
+            next = call
+            last = call
+            return
+        }
+
+        last!!.next = call
+        last = last!!.next
     }
 }

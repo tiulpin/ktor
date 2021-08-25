@@ -56,6 +56,9 @@ public actual interface ByteWriteChannel {
     public actual suspend fun writeFully(src: ByteArray, offset: Int, length: Int)
     public suspend fun writeFully(src: ByteBuffer)
 
+    @DangerousInternalIoApi
+    public fun writeFullyIgnoringSize(src: ByteBuffer)
+
     /**
      * Invokes [block] if it is possible to write at least [min] byte
      * providing byte buffer to it so lambda can write to the buffer

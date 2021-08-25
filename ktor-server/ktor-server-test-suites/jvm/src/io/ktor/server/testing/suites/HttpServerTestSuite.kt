@@ -244,12 +244,15 @@ abstract class HttpServerTestSuite<TEngine : ApplicationEngine, TConfiguration :
 
             val responses = s.getInputStream().bufferedReader(Charsets.ISO_8859_1).lineSequence()
                 .filterNot { line ->
+                    println("Receive line $line")
                     line.startsWith("Date") || line.startsWith("Server") ||
                         line.startsWith("Content-") || line.toIntOrNull() != null ||
                         line.isBlank() || line.startsWith("Connection") || line.startsWith("Keep-Alive")
                 }
                 .map { it.trim() }
                 .joinToString(separator = "\n").replace("200 OK", "200")
+
+            println("DONE")
 
             assertEquals(
                 """

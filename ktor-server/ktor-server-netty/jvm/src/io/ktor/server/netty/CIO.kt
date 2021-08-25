@@ -5,6 +5,9 @@
 package io.ktor.server.netty
 
 import io.ktor.util.cio.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.internal.*
+import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.util.concurrent.*
 import io.netty.util.concurrent.Future
@@ -68,7 +71,7 @@ internal object NettyDispatcher : CoroutineDispatcher() {
         nettyContext.executor().execute(block)
     }
 
-    public class CurrentContext(val context: ChannelHandlerContext) : AbstractCoroutineContextElement(CurrentContextKey)
+    class CurrentContext(val context: ChannelHandlerContext) : AbstractCoroutineContextElement(CurrentContextKey)
     object CurrentContextKey : CoroutineContext.Key<CurrentContext>
 }
 
@@ -96,6 +99,15 @@ private class CoroutineListener<T, F : Future<T>>(
         future.removeListener(this)
         if (continuation.isCancelled) future.cancel(false)
     }
+}
+
+@OptIn(DangerousInternalIoApi::class)
+internal fun ByteWriteChannel.writeByteBuf(buffer: ByteBuf) {
+    val length = buffer.readableBytes()
+    if (length == 0) return
+
+    val bytes = buffer.internalNioBuffer(buffer.readerIndex(), length)
+    writeFullyIgnoringSize(bytes)
 }
 
 private tailrec fun Throwable.unwrap(): Throwable =

@@ -5,7 +5,6 @@
 package io.ktor.server.netty
 
 import io.ktor.server.engine.*
-import io.ktor.server.netty.cio.*
 import io.ktor.server.netty.http1.*
 import io.ktor.server.netty.http2.*
 import io.netty.channel.*
@@ -32,8 +31,6 @@ public class NettyChannelInitializer(
     private val engineContext: CoroutineContext,
     private val userContext: CoroutineContext,
     private val connector: EngineConnectorConfig,
-    private val requestQueueLimit: Int,
-    private val runningLimit: Int,
     private val responseWriteTimeout: Int,
     private val requestReadTimeout: Int,
     private val httpServerCodec: () -> HttpServerCodec,
@@ -48,8 +45,6 @@ public class NettyChannelInitializer(
         engineContext: CoroutineContext,
         userContext: CoroutineContext,
         connector: EngineConnectorConfig,
-        requestQueueLimit: Int,
-        runningLimit: Int,
         responseWriteTimeout: Int,
         requestReadTimeout: Int,
         httpServerCodec: () -> HttpServerCodec
@@ -60,8 +55,6 @@ public class NettyChannelInitializer(
         engineContext,
         userContext,
         connector,
-        requestQueueLimit,
-        runningLimit,
         responseWriteTimeout,
         requestReadTimeout,
         httpServerCodec,
@@ -70,12 +63,6 @@ public class NettyChannelInitializer(
 
     init {
         if (connector is EngineSSLConnectorConfig) {
-
-            // It is better but netty-openssl doesn't support it
-//              val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
-//              kmf.init(ktorConnector.keyStore, password)
-//              password.fill('\u0000')
-
             @Suppress("UNCHECKED_CAST")
             val chain1 = connector.keyStore.getCertificateChain(connector.keyAlias).toList() as List<X509Certificate>
             val certs = chain1.toList().toTypedArray()
@@ -84,25 +71,23 @@ public class NettyChannelInitializer(
             password.fill('\u0000')
 
             sslContext = SslContextBuilder.forServer(pk, *certs).apply {
-                if (alpnProvider != null) {
-                    sslProvider(alpnProvider)
-                    ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                    applicationProtocolConfig(
-                        ApplicationProtocolConfig(
-                            ApplicationProtocolConfig.Protocol.ALPN,
-                            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                            ApplicationProtocolNames.HTTP_2,
-                            ApplicationProtocolNames.HTTP_1_1
-                        )
+                if (alpnProvider == null) return@apply
+
+                sslProvider(alpnProvider)
+                ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+                applicationProtocolConfig(
+                    ApplicationProtocolConfig(
+                        ApplicationProtocolConfig.Protocol.ALPN,
+                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                        ApplicationProtocolNames.HTTP_2,
+                        ApplicationProtocolNames.HTTP_1_1
                     )
-                }
-            }
-                .build()
+                )
+            }.build()
         }
     }
 
-    @Suppress("KDocMissingDocumentation")
     override fun initChannel(ch: SocketChannel) {
         with(ch.pipeline()) {
             if (connector is EngineSSLConnectorConfig) {
@@ -131,18 +116,15 @@ public class NettyChannelInitializer(
                 channelPipelineConfig(pipeline)
             }
             ApplicationProtocolNames.HTTP_1_1 -> {
-                val requestQueue = NettyRequestQueue(requestQueueLimit, runningLimit)
                 val handler = NettyHttp1Handler(
                     enginePipeline,
                     environment,
                     callEventGroup,
                     engineContext,
-                    userContext,
-                    requestQueue
+                    userContext
                 )
 
                 with(pipeline) {
-                    //                    addLast(LoggingHandler(LogLevel.WARN))
                     if (requestReadTimeout > 0) {
                         addLast("readTimeout", ReadTimeoutHandler(requestReadTimeout))
                     }

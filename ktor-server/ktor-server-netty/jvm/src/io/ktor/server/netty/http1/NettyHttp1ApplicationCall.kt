@@ -7,17 +7,18 @@ package io.ktor.server.netty.http1
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.netty.channel.*
 import io.netty.handler.codec.http.*
 import kotlin.coroutines.*
 
-@OptIn(EngineAPI::class)
+@OptIn(EngineAPI::class, InternalAPI::class)
 internal class NettyHttp1ApplicationCall(
     application: Application,
     context: ChannelHandlerContext,
     httpRequest: HttpRequest,
-    requestBodyChannel: ByteReadChannel,
+    val requestBodyChannel: ByteChannel?,
     engineContext: CoroutineContext,
     userContext: CoroutineContext
 ) : NettyApplicationCall(application, context, httpRequest) {
@@ -27,7 +28,7 @@ internal class NettyHttp1ApplicationCall(
         engineContext,
         context,
         httpRequest,
-        requestBodyChannel
+        requestBodyChannel ?: ByteReadChannel.Empty
     )
     override val response = NettyHttp1ApplicationResponse(
         this,

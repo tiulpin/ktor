@@ -32,6 +32,22 @@ public open class ByteChannelSequentialJVM(
         writeFullySuspend(src)
     }
 
+    @OptIn(DangerousInternalIoApi::class)
+    override fun writeFullyIgnoringSize(src: ByteBuffer) {
+        val srcRemaining = src.remaining()
+
+        val written = when {
+            closed -> throw closedCause ?: ClosedSendChannelException("Channel closed for write")
+            srcRemaining == 0 -> 0
+            else -> {
+                writable.writeFully(src)
+                srcRemaining
+            }
+        }
+
+        afterWrite(written)
+    }
+
     private suspend fun writeFullySuspend(src: ByteBuffer) {
         while (src.hasRemaining()) {
             awaitAtLeastNBytesAvailableForWrite(1)

@@ -138,35 +138,31 @@ public class NettyApplicationEngine(
         environment.connectors.map(::createBootstrap)
     }
 
-    private fun createBootstrap(connector: EngineConnectorConfig): ServerBootstrap {
-        return customBootstrap.clone().apply {
-            if (config().group() == null && config().childGroup() == null) {
-                group(connectionEventGroup, workerEventGroup)
-            }
+    private fun createBootstrap(connector: EngineConnectorConfig): ServerBootstrap = customBootstrap.clone().apply {
+        if (config().group() == null && config().childGroup() == null) {
+            group(connectionEventGroup, workerEventGroup)
+        }
 
-            if (config().channelFactory() == null) {
-                channel(getChannelClass().java)
-            }
+        if (config().channelFactory() == null) {
+            channel(getChannelClass().java)
+        }
 
-            childHandler(
-                NettyChannelInitializer(
-                    pipeline,
-                    environment,
-                    callEventGroup,
-                    engineDispatcherWithShutdown,
-                    environment.parentCoroutineContext + dispatcherWithShutdown,
-                    connector,
-                    configuration.requestQueueLimit,
-                    configuration.runningLimit,
-                    configuration.responseWriteTimeoutSeconds,
-                    configuration.requestReadTimeoutSeconds,
-                    configuration.httpServerCodec,
-                    configuration.channelPipelineConfig
-                )
+        childHandler(
+            NettyChannelInitializer(
+                pipeline,
+                environment,
+                callEventGroup,
+                engineDispatcherWithShutdown,
+                environment.parentCoroutineContext + dispatcherWithShutdown,
+                connector,
+                configuration.responseWriteTimeoutSeconds,
+                configuration.requestReadTimeoutSeconds,
+                configuration.httpServerCodec,
+                configuration.channelPipelineConfig
             )
-            if (configuration.tcpKeepAlive) {
-                option(NioChannelOption.SO_KEEPALIVE, true)
-            }
+        )
+        if (configuration.tcpKeepAlive) {
+            option(NioChannelOption.SO_KEEPALIVE, true)
         }
     }
 
