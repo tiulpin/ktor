@@ -28,6 +28,21 @@ internal class NettyResponsePipeline constructor(
     override val coroutineContext: CoroutineContext
 ) : CoroutineScope {
     private var currentResponse: NettyApplicationCall? = null
+    private var needsFlush: Boolean = false
+    private var reading: Boolean = false
+
+    fun startReading() {
+        reading = true
+    }
+
+    fun stopReading() {
+        reading = false
+        if (needsFlush) {
+            needsFlush = false
+            flushCount.incrementAndGet()
+            context.flush()
+        }
+    }
 
     fun processResponse(call: NettyApplicationCall) {
         val current = currentResponse
@@ -81,13 +96,12 @@ internal class NettyResponsePipeline constructor(
         return future
     }
 
-    private fun hasNextResponseMessage(): Boolean = currentResponse?.next != null
-
     companion object {
         val responses = AtomicLong()
         val flushCount = AtomicLong()
         val flushAvoided = AtomicLong()
         val flushNotAvoided = AtomicLong()
+
         init {
             GlobalScope.launch {
                 while (true) {
@@ -120,14 +134,17 @@ internal class NettyResponsePipeline constructor(
         if (shouldClose) {
             flushCount.incrementAndGet()
             context.flush()
+            needsFlush = false
             lastFuture.suspendWriteAwait()
             context.close()
             return
         }
 
-        if (hasNextResponseMessage()) return
-        context.channel().eventLoop().execute {
-            if (!hasNextResponseMessage()) {
+        if (currentResponse?.next != null) return
+
+        context.executor().execute {
+            if (currentResponse == null && needsFlush) {
+                needsFlush = false
                 flushNotAvoided.incrementAndGet()
                 flushCount.incrementAndGet()
                 context.flush()
@@ -145,6 +162,7 @@ internal class NettyResponsePipeline constructor(
         val requestMessageFuture = if (response.isUpgradeResponse()) {
             processUpgrade(responseMessage)
         } else {
+            needsFlush = true
             context.write(responseMessage)
         }
 

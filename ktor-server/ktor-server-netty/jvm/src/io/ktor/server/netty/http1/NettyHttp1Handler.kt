@@ -44,6 +44,7 @@ internal class NettyHttp1Handler(
     }
 
     override fun channelRead(context: ChannelHandlerContext, message: Any) {
+        responseWriter.startReading()
         when (message) {
             is HttpRequest -> handleRequest(context, message)
             is HttpContent -> handleContent(context, message)
@@ -52,6 +53,11 @@ internal class NettyHttp1Handler(
                 context.fireChannelRead(message)
             }
         }
+    }
+
+    override fun channelReadComplete(context: ChannelHandlerContext?) {
+        responseWriter.stopReading()
+        super.channelReadComplete(context)
     }
 
     @OptIn(EngineAPI::class)
