@@ -141,6 +141,7 @@ internal class NettyResponsePipeline constructor(
         val responseMessage = call.response.responseMessage.await()
         val response = call.response
 
+        responses.incrementAndGet()
         val requestMessageFuture = if (response.isUpgradeResponse()) {
             processUpgrade(responseMessage)
         } else {
