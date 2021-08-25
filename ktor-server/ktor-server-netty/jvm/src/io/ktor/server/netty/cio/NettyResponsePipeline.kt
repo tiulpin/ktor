@@ -12,17 +12,17 @@ import io.ktor.util.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http2.*
 import kotlinx.coroutines.*
 import java.io.*
+import java.util.concurrent.atomic.*
 import kotlin.coroutines.*
 
 private const val UNFLUSHED_LIMIT = 65536
 
-@OptIn(InternalAPI::class, EngineAPI::class)
+@OptIn(InternalAPI::class, EngineAPI::class, DelicateCoroutinesApi::class)
 internal class NettyResponsePipeline constructor(
     private val context: ChannelHandlerContext,
     override val coroutineContext: CoroutineContext
@@ -83,29 +83,57 @@ internal class NettyResponsePipeline constructor(
 
     private fun hasNextResponseMessage(): Boolean = currentResponse?.next != null
 
-    private suspend fun finishCall(call: NettyApplicationCall, lastMessage: Any?, lastFuture: ChannelFuture) {
-        val prepareForClose = !call.request.keepAlive || call.response.isUpgradeResponse()
-        val doNotFlush = hasNextResponseMessage() && !prepareForClose
+    companion object {
+        val responses = AtomicLong()
+        val flushCount = AtomicLong()
+        val flushAvoided = AtomicLong()
+        val flushNotAvoided = AtomicLong()
+        init {
+            GlobalScope.launch {
+                while (true) {
+                    delay(3000)
 
-        val future: ChannelFuture? = when {
-            lastMessage == null && doNotFlush -> null
-            lastMessage == null -> {
-                context.flush()
-                null
+                    val currentFlushCount = flushCount.getAndSet(0)
+                    val currentResponses = responses.getAndSet(0).toDouble()
+                    val currentFlushAvoided = flushAvoided.getAndSet(0)
+                    val currentFlushNotAvoided = flushNotAvoided.getAndSet(0)
+                    if (currentFlushCount == 0L) {
+                        println("No flushes for $currentResponses count, avoided: $currentFlushAvoided, not $currentFlushNotAvoided")
+                    } else {
+                        val flushSize = currentResponses / currentFlushCount
+                        println("Average flush size: $flushSize, avoided $currentFlushAvoided, not $currentFlushNotAvoided")
+                    }
+                }
             }
-            doNotFlush -> {
-                context.write(lastMessage)
-                null
-            }
-            else -> context.writeAndFlush(lastMessage)
         }
+    }
+
+    private suspend fun finishCall(call: NettyApplicationCall, lastMessage: Any?, lastFuture: ChannelFuture) {
+        val shouldClose = !call.request.keepAlive
+
+        val future = if (lastMessage != null) {
+            context.write(lastMessage)
+        } else null
 
         future?.suspendWriteAwait()
 
-        if (prepareForClose) {
+        if (shouldClose) {
+            flushCount.incrementAndGet()
             context.flush()
             lastFuture.suspendWriteAwait()
             context.close()
+            return
+        }
+
+        if (hasNextResponseMessage()) return
+        context.channel().eventLoop().execute {
+            if (!hasNextResponseMessage()) {
+                flushNotAvoided.incrementAndGet()
+                flushCount.incrementAndGet()
+                context.flush()
+            } else {
+                flushAvoided.incrementAndGet()
+            }
         }
     }
 
