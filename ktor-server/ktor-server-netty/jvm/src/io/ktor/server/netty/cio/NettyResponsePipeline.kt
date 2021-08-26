@@ -57,18 +57,16 @@ internal class NettyResponsePipeline constructor(
     }
 
     private fun startResponseProcessing() {
-        launch(NettyDispatcher + NettyDispatcher.CurrentContext(context)) {
-            while (true) {
-                val call = currentResponse ?: break
-                processElement(call)
-                currentResponse = currentResponse?.next
-            }
+        while (true) {
+            val call = currentResponse ?: break
+            processElement(call)
+            currentResponse = currentResponse?.next
         }
     }
 
-    private suspend fun processElement(call: NettyApplicationCall) {
+    private fun processElement(call: NettyApplicationCall) {
         try {
-            processCall(call)
+            scheduleCallProcessing(call)
         } catch (actualException: Throwable) {
             processCallFailed(call, actualException)
         } finally {
@@ -99,8 +97,6 @@ internal class NettyResponsePipeline constructor(
     companion object {
         val responses = AtomicLong()
         val flushCount = AtomicLong()
-        val flushAvoided = AtomicLong()
-        val flushNotAvoided = AtomicLong()
 
         init {
             GlobalScope.launch {
@@ -109,53 +105,72 @@ internal class NettyResponsePipeline constructor(
 
                     val currentFlushCount = flushCount.getAndSet(0)
                     val currentResponses = responses.getAndSet(0).toDouble()
-                    val currentFlushAvoided = flushAvoided.getAndSet(0)
-                    val currentFlushNotAvoided = flushNotAvoided.getAndSet(0)
                     if (currentFlushCount == 0L) {
-                        println("No flushes for $currentResponses count, avoided: $currentFlushAvoided, not $currentFlushNotAvoided")
+                        println("No flushes for $currentResponses count")
                     } else {
                         val flushSize = currentResponses / currentFlushCount
-                        println("Average flush size: $flushSize, avoided $currentFlushAvoided, not $currentFlushNotAvoided")
+                        println("Average flush size: $flushSize")
                     }
                 }
             }
         }
     }
 
-    private suspend fun finishCall(call: NettyApplicationCall, lastMessage: Any?, lastFuture: ChannelFuture) {
+    private fun finishCall(call: NettyApplicationCall, lastMessage: Any?, lastFuture: ChannelFuture) {
         val shouldClose = !call.request.keepAlive
 
         val future = if (lastMessage != null) {
             context.write(lastMessage)
         } else null
 
-        future?.suspendWriteAwait()
+        future?.addListener {
+            if (shouldClose) {
+                close(lastFuture)
+                return@addListener
+            }
+
+            if (currentResponse?.next == null) {
+                scheduleFlush()
+            }
+        }
 
         if (shouldClose) {
-            flushCount.incrementAndGet()
-            context.flush()
-            needsFlush = false
-            lastFuture.suspendWriteAwait()
-            context.close()
+            close(lastFuture)
             return
         }
 
-        if (currentResponse?.next != null) return
+        if (currentResponse?.next == null) {
+            scheduleFlush()
+        }
+    }
 
+    fun close(lastFuture: ChannelFuture) {
+        flushCount.incrementAndGet()
+        context.flush()
+        needsFlush = false
+        lastFuture.addListener {
+            context.close()
+        }
+    }
+
+    fun scheduleFlush() {
         context.executor().execute {
             if (currentResponse == null && needsFlush) {
                 needsFlush = false
-                flushNotAvoided.incrementAndGet()
                 flushCount.incrementAndGet()
                 context.flush()
-            } else {
-                flushAvoided.incrementAndGet()
             }
         }
     }
 
-    private suspend fun processCall(call: NettyApplicationCall) {
-        val responseMessage = call.response.responseMessage.await()
+    private fun scheduleCallProcessing(call: NettyApplicationCall) {
+        call.response.responseFlag.addListener {
+            processCall(call)
+        }
+    }
+
+    private fun processCall(call: NettyApplicationCall) {
+        val responseMessage = call.response.responseMessage
         val response = call.response
 
         responses.incrementAndGet()
@@ -180,11 +195,17 @@ internal class NettyResponsePipeline constructor(
             else -> -1
         }
 
-        when (knownSize) {
-            0 -> processEmpty(call, requestMessageFuture)
-            in 1..65536 -> processSmallContent(call, response, knownSize)
-            -1 -> processBodyFlusher(call, response, requestMessageFuture)
-            else -> processBodyGeneral(call, response, requestMessageFuture)
+        if (knownSize == 0) {
+            processEmpty(call, requestMessageFuture)
+            return
+        }
+
+        launch(NettyDispatcher + NettyDispatcher.CurrentContext(context)) {
+            when (knownSize) {
+                in 1..65536 -> processSmallContent(call, response, knownSize)
+                -1 -> processBodyFlusher(call, response, requestMessageFuture)
+                else -> processBodyGeneral(call, response, requestMessageFuture)
+            }
         }
     }
 
@@ -195,7 +216,7 @@ internal class NettyResponsePipeline constructor(
             null
         }
 
-    private suspend fun processEmpty(call: NettyApplicationCall, lastFuture: ChannelFuture) {
+    private fun processEmpty(call: NettyApplicationCall, lastFuture: ChannelFuture) {
         return finishCall(call, LastHttpContent.EMPTY_LAST_CONTENT, lastFuture)
     }
 

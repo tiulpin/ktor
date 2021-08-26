@@ -25,12 +25,12 @@ public interface ApplicationEngine {
         /**
          * Specifies size of the event group for accepting connections
          */
-        public var connectionGroupSize: Int = parallelism / 2 + 1
+        public var connectionGroupSize: Int = parallelism // 2 + 1
 
         /**
          * Specifies size of the event group for processing connections, parsing messages and doing engine's internal work
          */
-        public var workerGroupSize: Int = parallelism / 2 + 1
+        public var workerGroupSize: Int = parallelism // 2 + 1
 
         /**
          * Specifies size of the event group for running application code

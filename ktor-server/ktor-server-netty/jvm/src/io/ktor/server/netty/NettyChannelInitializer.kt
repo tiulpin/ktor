@@ -38,29 +38,6 @@ public class NettyChannelInitializer(
 ) : ChannelInitializer<SocketChannel>() {
     private var sslContext: SslContext? = null
 
-    internal constructor(
-        enginePipeline: EnginePipeline,
-        environment: ApplicationEngineEnvironment,
-        callEventGroup: EventExecutorGroup,
-        engineContext: CoroutineContext,
-        userContext: CoroutineContext,
-        connector: EngineConnectorConfig,
-        responseWriteTimeout: Int,
-        requestReadTimeout: Int,
-        httpServerCodec: () -> HttpServerCodec
-    ) : this(
-        enginePipeline,
-        environment,
-        callEventGroup,
-        engineContext,
-        userContext,
-        connector,
-        responseWriteTimeout,
-        requestReadTimeout,
-        httpServerCodec,
-        {}
-    )
-
     init {
         if (connector is EngineSSLConnectorConfig) {
             @Suppress("UNCHECKED_CAST")
@@ -128,14 +105,15 @@ public class NettyChannelInitializer(
                     if (requestReadTimeout > 0) {
                         addLast("readTimeout", ReadTimeoutHandler(requestReadTimeout))
                     }
-                    addLast("codec", httpServerCodec())
+                    addLast("encoder", HttpResponseEncoder())
+                    addLast("decoder", HttpRequestDecoder(4096, 8192, 8192, false))
                     addLast("continue", HttpServerExpectContinueHandler())
                     addLast("timeout", WriteTimeoutHandler(responseWriteTimeout))
                     addLast("http1", handler)
                     channelPipelineConfig()
                 }
 
-                pipeline.context("codec").fireChannelActive()
+                pipeline.context("encoder").fireChannelActive()
             }
             else -> {
                 environment.log.error("Unsupported protocol $protocol")

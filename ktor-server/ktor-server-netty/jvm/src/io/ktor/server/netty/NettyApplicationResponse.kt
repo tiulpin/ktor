@@ -12,7 +12,6 @@ import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.netty.channel.*
 import io.netty.handler.codec.http.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 @Suppress("KDocMissingDocumentation")
@@ -25,7 +24,8 @@ public abstract class NettyApplicationResponse(
     protected val userContext: CoroutineContext
 ) : BaseApplicationResponse(call) {
 
-    public val responseMessage: CompletableDeferred<Any> = CompletableDeferred()
+    internal val responseFlag: ChannelPromise = context.newPromise()
+    public lateinit var responseMessage: Any
 
     @Volatile
     protected var responseMessageSent: Boolean = false
@@ -56,7 +56,8 @@ public abstract class NettyApplicationResponse(
                 is LastHttpContent -> ByteReadChannel.Empty
                 else -> ByteReadChannel(bytes)
             }
-            responseMessage.complete(message)
+            responseMessage = message
+            responseFlag.setSuccess()
             responseMessageSent = true
         }
     }
@@ -78,8 +79,7 @@ public abstract class NettyApplicationResponse(
     internal fun sendResponse(chunked: Boolean = true, content: ByteReadChannel) {
         if (!responseMessageSent) {
             responseChannel = content
-            responseMessage.complete(
-                when {
+            responseMessage = when {
                     content.isClosedForRead -> {
                         responseMessage(chunked = false, data = EmptyByteArray)
                     }
@@ -87,7 +87,7 @@ public abstract class NettyApplicationResponse(
                         responseMessage(chunked, last = false)
                     }
                 }
-            )
+            responseFlag.setSuccess()
             responseMessageSent = true
         }
     }
@@ -111,7 +111,7 @@ public abstract class NettyApplicationResponse(
     public fun cancel() {
         if (!responseMessageSent) {
             responseChannel = ByteReadChannel.Empty
-            responseMessage.cancel()
+            responseFlag.setFailure(java.util.concurrent.CancellationException())
             responseMessageSent = true
         }
     }
