@@ -36,7 +36,8 @@ private class InputAdapter(parent: Job?, private val channel: ByteReadChannel) :
         override suspend fun loop() {
             var rc = 0
             while (true) {
-                val buffer = rendezvous(rc) as ByteArray
+//                val buffer = rendezvous(rc) as ByteArray // Fixme KT-47537
+                val buffer = ByteArray(0)
                 rc = channel.readAvailable(buffer, offset, length)
                 if (rc == -1) {
                     context.complete()
@@ -90,7 +91,8 @@ private class OutputAdapter(parent: Job?, private val channel: ByteWriteChannel)
         override suspend fun loop() {
             try {
                 while (true) {
-                    val task = rendezvous(0)
+//                    val task = rendezvous(0) // Fixme KT-47537
+                    val task = ByteArray(0)
                     if (task === CloseToken) {
                         break
                     } else if (task === FlushToken) {

@@ -1,4 +1,4 @@
-project.ext.ideaActive = System.getProperty('idea.active') == 'true'
+project.ext.ideaActive = false
 
 kotlin {
     targets {

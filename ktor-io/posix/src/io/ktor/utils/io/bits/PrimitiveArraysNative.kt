@@ -7,7 +7,9 @@ import kotlinx.cinterop.*
 import platform.posix.*
 
 @PublishedApi
-internal const val unalignedAccessSupported: Boolean = UNALIGNED_ACCESS_ALLOWED == 1
+// Fixme KT-48572
+internal val unalignedAccessSupported: Boolean
+    get() = UNALIGNED_ACCESS_ALLOWED == 1
 
 /**
  * Copies shorts integers from this memory range from the specified [offset] and [count]

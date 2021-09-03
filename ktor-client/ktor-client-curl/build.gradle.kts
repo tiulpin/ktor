@@ -15,7 +15,7 @@ kotlin {
         if (ideaActive) {
             current.add(getByName("posix"))
         } else {
-            current.addAll(listOf(getByName("macosX64"), getByName("linuxX64"), getByName("mingwX64")))
+            current.addAll(listOf(getByName("macosX64"), getByName("linuxX64")/*, getByName("mingwX64")*/))
         }
 
         val paths = listOf(
@@ -73,17 +73,6 @@ kotlin {
                 api(project(":ktor-client:ktor-client-features:ktor-client-logging"))
                 api(project(":ktor-client:ktor-client-features:ktor-client-json"))
             }
-        }
-
-        // Hack: register the Native interop klibs as outputs of Kotlin source sets:
-        if (!ideaActive) {
-            val libcurlInterop by creating
-            getByName("posixMain").dependsOn(libcurlInterop)
-            apply(from = "$rootDir/gradle/interop-as-source-set-klib.gradle")
-            (project.ext.get("registerInteropAsSourceSetOutput") as groovy.lang.Closure<*>).invoke(
-                "libcurl",
-                libcurlInterop
-            )
         }
     }
 }

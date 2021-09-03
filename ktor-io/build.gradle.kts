@@ -28,22 +28,12 @@ kotlin {
             }
         }
 
-// Hack: register the Native interop klibs as outputs of Kotlin source sets:
-        val bitsMain by creating { dependsOn(commonMain) }
-        val socketsMain by creating { dependsOn(commonMain) }
-
         val posixMain by getting {
-            dependsOn(bitsMain)
-            dependsOn(socketsMain)
+            dependsOn(commonMain)
         }
 
-        if (!ideaActive) {
-            apply(from = "$rootDir/gradle/interop-as-source-set-klib.gradle")
-            val registerInteropAsSourceSetOutput: groovy.lang.Closure<*> by extra
-            afterEvaluate {
-                registerInteropAsSourceSetOutput("bits", bitsMain)
-                registerInteropAsSourceSetOutput("sockets", socketsMain)
-            }
+        val posixTest by getting {
+            dependsOn(commonTest)
         }
     }
 }

@@ -1,5 +1,5 @@
-@file:Suppress("ReplaceRangeToWithUntil", "RedundantModalityModifier", "DEPRECATION", "DEPRECATION_ERROR")
-
+@file:Suppress("ReplaceRangeToWithUntil", "RedundantModalityModifier", "DEPRECATION", "DEPRECATION_ERROR", "ACTUAL_MISSING", "ACTUAL_WITHOUT_EXPECT", "EXPERIMENTAL_API_USAGE_ERROR")
+// Fixme KT-48291
 package io.ktor.utils.io.core
 
 import io.ktor.utils.io.bits.*

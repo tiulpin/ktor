@@ -22,6 +22,7 @@ repositories {
     if (buildSnapshotTrain) {
         mavenLocal()
     }
+    mavenLocal()
 }
 
 val props = Properties().apply {

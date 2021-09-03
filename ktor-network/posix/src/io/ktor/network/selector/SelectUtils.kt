@@ -71,8 +71,9 @@ internal class SelectorHelper {
                 continue
             }
 
-            pselect(maxDescriptor + 1, readSet.ptr, writeSet.ptr, errorSet.ptr, null, null)
-                .check()
+            // Fixme KT-48576
+            /*pselect(maxDescriptor + 1, readSet.ptr, writeSet.ptr, errorSet.ptr, null, null)
+                .check()*/
 
             processSelectedEvents(watchSet, completed, readSet, writeSet, errorSet)
         }

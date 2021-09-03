@@ -121,7 +121,7 @@ class ByteChannelTest {
         val total = withMemory(1024) {
             channel.peekTo(it, destinationOffset = 16, min = 1, max = Long.MAX_VALUE)
         }
-        assertEquals(1024 - 16, total)
+        assertEquals(1024L - 16, total)
     }
 
     @Test
@@ -137,7 +137,7 @@ class ByteChannelTest {
         val total = withMemory(1024) {
             channel.peekTo(it, destinationOffset = 0, offset = 16, min = 1, max = Long.MAX_VALUE)
         }
-        assertEquals(1024 - 16, total)
+        assertEquals(1024L - 16, total)
     }
 
     @Test
@@ -153,7 +153,7 @@ class ByteChannelTest {
         val total = withMemory(1024) {
             channel.peekTo(it, destinationOffset = 16, offset = 16, min = 1, max = Long.MAX_VALUE)
         }
-        assertEquals(1024 - 16, total)
+        assertEquals(1024L - 16, total)
     }
 
     @Test

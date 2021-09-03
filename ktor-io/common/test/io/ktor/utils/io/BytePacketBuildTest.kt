@@ -37,7 +37,7 @@ open class BytePacketBuildTest {
             listOf(1, 2, 3).joinTo(this, separator = "|")
         }
 
-        assertEquals(2 + 1 + 2 + 4 + 8 + 4 + 8 + 8 + 3 + 5, p.remaining)
+        assertEquals(2L + 1 + 2 + 4 + 8 + 4 + 8 + 8 + 3 + 5, p.remaining)
         val ba = ByteArray(2)
         p.readFully(ba)
 
@@ -75,7 +75,7 @@ open class BytePacketBuildTest {
             listOf(1, 2, 3).joinTo(this, separator = "|")
         }
 
-        assertEquals(9999 + 1 + 2 + 4 + 8 + 4 + 8 + 3 + 5, p.remaining)
+        assertEquals(9999L + 1 + 2 + 4 + 8 + 4 + 8 + 3 + 5, p.remaining)
 
         p.readFully(ByteArray(9999))
         assertEquals(0x12, p.readByte())

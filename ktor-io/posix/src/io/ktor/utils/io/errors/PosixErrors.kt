@@ -145,7 +145,7 @@ private tailrec fun MemScope.strerror(errno: Int, size: size_t = 8192.convert())
     val message = allocArray<ByteVar>(size.toLong())
     val result = strerror_r(errno, message, size)
     if (result == ERANGE) {
-        return strerror(errno, size * 2.convert())
+        return strerror(errno, (size * 2u).convert())
     }
     if (result != 0) {
         return "Unknown error ($errno)"

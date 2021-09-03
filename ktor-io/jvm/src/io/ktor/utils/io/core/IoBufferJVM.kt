@@ -1,5 +1,5 @@
-@file:Suppress("RedundantModalityModifier", "DEPRECATION", "DEPRECATION_ERROR")
-
+@file:Suppress("RedundantModalityModifier", "DEPRECATION", "DEPRECATION_ERROR", "EXPERIMENTAL_API_USAGE_ERROR", "ACTUAL_WITHOUT_EXPECT", "ACTUAL_MISSING")
+// Fixme KT-48291
 package io.ktor.utils.io.core
 
 import io.ktor.utils.io.bits.*

@@ -1,3 +1,5 @@
+@file:OptIn(DangerousInternalIoApi::class) // Huh? Exclusive IDE errors
+
 package io.ktor.utils.io
 
 import io.ktor.utils.io.bits.*
@@ -5,6 +7,7 @@ import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.Buffer
 import io.ktor.utils.io.core.ByteOrder
+import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.internal.*
 import io.ktor.utils.io.pool.*
 import kotlinx.atomicfu.*
@@ -16,6 +19,7 @@ import java.lang.Float.*
 import java.nio.*
 import kotlin.coroutines.*
 import kotlin.coroutines.intrinsics.*
+import kotlin.require
 
 internal const val DEFAULT_CLOSE_MESSAGE: String = "Byte channel was closed"
 private const val BYTE_BUFFER_CAPACITY: Int = 4088
@@ -2360,7 +2364,8 @@ internal open class ByteBufferChannel(
     }
 
     private suspend fun writeSuspend(size: Int) {
-        while (writeSuspendPredicate(size)) {
+        // Fixme KT-47537
+/*        while (writeSuspendPredicate(size)) {
             suspendCancellableCoroutine<Unit> { c ->
                 do {
                     closed?.sendException?.let { rethrowClosed(it) }
@@ -2378,7 +2383,7 @@ internal open class ByteBufferChannel(
             }
         }
 
-        closed?.sendException?.let { rethrowClosed(it) }
+        closed?.sendException?.let { rethrowClosed(it) }*/
     }
 
     private inline fun <T, C : Continuation<T>> setContinuation(

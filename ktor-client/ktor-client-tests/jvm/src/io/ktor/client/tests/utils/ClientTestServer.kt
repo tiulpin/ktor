@@ -12,12 +12,13 @@ import io.ktor.http.cio.websocket.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import io.ktor.util.*
 import io.ktor.websocket.*
 
-@OptIn(ExperimentalWebSocketExtensionApi::class)
+@OptIn(ExperimentalWebSocketExtensionApi::class, InternalAPI::class)
 internal fun Application.tests() {
     install(WebSockets) {
-        maxFrameSize = 4 * 1024
+        maxFrameSize = 4 * 1024L // 1.5.30 Long, 1.6.0 Int -> mismatch
 
         extensions {
             install(WebSocketDeflateExtension)

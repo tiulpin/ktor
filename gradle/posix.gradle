@@ -40,12 +40,13 @@ def skipMingwProjects = [
 ]
 
 def host = getHostName()
-def skipMingw = skipMingwProjects.contains(project.name)
+def skipMingw = true
 
 if (host == 'windows' && skipMingw) return
 
 kotlin {
     targets {
+        project.ext.hostname = host
         if (project.ext.ideaActive) {
             project.ext.hostname = host
             fromPreset(project.ext.ideaPreset, 'posix')
@@ -92,8 +93,8 @@ kotlin {
                     crossCompileTargets.remove(macosX64)
                     break
             }
-
-            disableCompilation(crossCompileTargets)
+//            cinterops are not enabled and not commonized for targets with disabled compilations
+//            disableCompilation(crossCompileTargets)
 
             if (!skipMingw) {
                 configure([mingwX64Test]) {

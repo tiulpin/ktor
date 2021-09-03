@@ -28,13 +28,5 @@ kotlin {
                 implementation("io.mockk:mockk:$mockk_version")
             }
         }
-
-        if (!ideaActive && findByName("posixMain") != null) {
-            val networkInterop by creating
-            getByName("posixMain").dependsOn(networkInterop)
-            apply(from = "$rootDir/gradle/interop-as-source-set-klib.gradle")
-            val registerInteropAsSourceSetOutput = extra["registerInteropAsSourceSetOutput"] as groovy.lang.Closure<*>
-            registerInteropAsSourceSetOutput.invoke("network", networkInterop)
-        }
     }
 }
