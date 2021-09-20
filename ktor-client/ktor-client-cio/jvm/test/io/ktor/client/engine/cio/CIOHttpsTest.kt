@@ -158,6 +158,7 @@ class CIOHttpsTest : TestWithKtor() {
     }
 
     @Test
+    @Ignore
     fun customDomainsTest() = testWithEngine(CIO) {
         val domains = listOf(
             "https://google.com",
