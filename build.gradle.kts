@@ -26,7 +26,8 @@ buildscript {
         }
         repositories {
             mavenLocal()
-            maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
+            //maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
+            maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
         }
 
         configurations.classpath {
