@@ -7,6 +7,7 @@ package io.ktor.util
 import io.ktor.util.date.*
 import kotlin.test.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 class GMTDateTest {
 
