@@ -20,6 +20,7 @@ import kotlinx.coroutines.*
 import kotlin.random.*
 import kotlin.test.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 @Suppress("ReplaceSingleLineLet")
 @OptIn(ExperimentalTime::class)

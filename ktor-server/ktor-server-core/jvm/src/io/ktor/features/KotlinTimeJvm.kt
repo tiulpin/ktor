@@ -7,6 +7,7 @@ package io.ktor.features
 import io.ktor.sessions.*
 import kotlin.math.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Duration to tell the client to keep CORS options.
