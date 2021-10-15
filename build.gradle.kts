@@ -92,6 +92,7 @@ apply(from = "gradle/compatibility.gradle")
 
 plugins {
     id("org.jetbrains.dokka") version "1.4.32"
+    id("kotlinx-kover") version "0.3.0" apply false
 }
 
 allprojects {
@@ -157,6 +158,16 @@ allprojects {
     val skipPublish: List<String> by rootProject.extra
     if (!skipPublish.contains(project.name)) {
         configurePublication()
+    }
+
+    apply(plugin = "kotlinx-kover")
+
+    tasks.findByPath("jvmTest")?.apply {
+        extensions.configure<kotlinx.kover.api.KoverTaskExtension>() {
+            generateHtml = true
+            coverageEngine = kotlinx.kover.api.CoverageEngine.INTELLIJ
+            htmlReportDir.set(file("$buildDir/coverage/html"))
+        }
     }
 }
 

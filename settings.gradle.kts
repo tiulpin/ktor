@@ -7,6 +7,7 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
+        maven(url = "https://maven.pkg.jetbrains.space/public/p/jb-coverage/maven")
     }
     resolutionStrategy {
         eachPlugin {
