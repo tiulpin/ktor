@@ -8,9 +8,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.util.*
-import io.ktor.utils.io.*
 import org.junit.Test
-import java.math.*
 import kotlin.test.*
 
 class ApplicationPluginTest {
@@ -485,9 +483,7 @@ class ApplicationPluginTest {
             onCallRespond { _ ->
                 transformBody { data ->
                     if (data is MyInt) {
-                        val bc = ByteChannel(false)
-                        bc.writeInt(data.x)
-                        bc
+                        data.x.toString()
                     } else {
                         data
                     }
@@ -495,7 +491,7 @@ class ApplicationPluginTest {
             }
         }
 
-        fun assertWithPlugin(expectedResponse: Int) = withTestApplication {
+        fun assertWithPlugin(expectedResponse: String) = withTestApplication {
             application.install(plugin)
 
             application.routing {
@@ -507,13 +503,15 @@ class ApplicationPluginTest {
             }
 
             handleRequest(HttpMethod.Post, "/receive") {
-                setBody(BigInteger.valueOf(100500).toByteArray()) // sending bytes of 100500
+                // sending bytes of 100500
+                // 256^2 + 136*256 + 148 = 100500
+                setBody(byteArrayOf(0, 1, 136.toByte(), 148.toByte()))
             }.let { call ->
-                val content = call.response.content?.toInt()
+                val content = call.response.content
                 assertEquals(expectedResponse, content)
             }
         }
 
-        assertWithPlugin(expectedResponse = 100501)
+        assertWithPlugin(expectedResponse = "100501")
     }
 }
