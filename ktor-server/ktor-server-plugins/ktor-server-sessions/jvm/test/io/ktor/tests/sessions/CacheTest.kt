@@ -146,7 +146,7 @@ class CacheTest {
         assertEquals(D(1), weak.peek(1))
 
         @Suppress("UNUSED_VALUE")
-        value = null // workaround for coroutine holding reference
+        value = null // workaround for coroutine holding referencFe
         ref = null
 
         System.gc()
