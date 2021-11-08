@@ -5,7 +5,10 @@
 package io.ktor.client.tests
 
 import io.ktor.client.call.*
+import io.ktor.client.features.json.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.json.*
+import io.ktor.client.plugins.json.serializer.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -425,6 +428,73 @@ class LoggingTest : ClientLoader() {
 
             assertNotNull(response)
             response.discard()
+        }
+
+        after {
+            testLogger.verify()
+        }
+    }
+
+    data class Data(val message : String)
+
+    @Test
+    fun testLoggingWithJSON() = clientTests(listOf("iOS", "native:CIO")) {
+        val testLogger = TestLogger(
+            "REQUEST: http://127.0.0.1:8080/content/echo",
+            "METHOD: HttpMethod(value=POST)",
+            "COMMON HEADERS",
+            "-> Accept: */*",
+            "-> Accept-Charset: UTF-8",
+            "CONTENT HEADERS",
+            "-> Content-Length: 4",
+            "-> Content-Type: application/octet-stream",
+            "BODY Content-Type: application/octet-stream",
+            "BODY START",
+            "{\"message\":\"test\"}",
+            "BODY END",
+            "RESPONSE: 200 OK",
+            "METHOD: HttpMethod(value=POST)",
+            "FROM: http://127.0.0.1:8080/content/echo",
+            "COMMON HEADERS",
+            "???-> Connection: keep-alive",
+            "???-> connection: close",
+            "-> Content-Length: 4",
+            "BODY Content-Type: null",
+            "BODY START",
+            "{\"message\":\"test\"}",
+            "BODY END"
+        )
+
+        config {
+            install(JsonPlugin) {
+                serializer = KotlinxSerializer(
+                    kotlinx.serialization.json.Json {
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                    }
+                )
+            }
+
+            Logging {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        println(message)
+                    }
+                }
+                level = LogLevel.ALL
+            }
+        }
+
+        test { client ->
+            val response = client.request {
+                method = HttpMethod.Post
+                setBody("{\"message\":\"test\"}")
+                contentType(ContentType.Application.Json)
+                url("$TEST_SERVER/content/echo")
+            }.body<Data>()
+
+            assertNotNull(response)
+            assertEquals(response.message, "test")
         }
 
         after {
