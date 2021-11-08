@@ -77,6 +77,7 @@ fun Project.configureJvm() {
     val jvmTest: KotlinJvmTest = tasks.getByName<KotlinJvmTest>("jvmTest") {
         ignoreFailures = true
         maxHeapSize = "2g"
+        jvmArgs("-XX:+HeapDumpOnOutOfMemoryError")
         exclude("**/*StressTest *")
     }
 
