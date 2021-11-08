@@ -29,7 +29,7 @@ class DefaultWebSocketTest {
 
     @OptIn(InternalAPI::class)
     @BeforeTest
-    @OptIn(ExperimentalWebSocketExtensionApi::class)
+//    @OptIn(ExperimentalWebSocketExtensionApi::class)
     fun prepare() {
         parent = Job()
         client2server = ByteChannel()
