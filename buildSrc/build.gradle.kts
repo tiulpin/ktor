@@ -46,4 +46,5 @@ dependencies {
     implementation(kotlin("gradle-plugin", version("kotlin")))
     implementation("com.moowork.gradle:gradle-node-plugin:1.3.1")
     implementation("org.jmailen.gradle:kotlinter-gradle:${version("ktlint")}")
+    implementation("org.gradle:test-retry-gradle-plugin:1.3.1")
 }

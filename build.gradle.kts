@@ -100,6 +100,7 @@ val disabledExplicitApiModeProjects = listOf(
 )
 
 apply(from = "gradle/compatibility.gradle")
+apply(from = "gradle/testRetry.gradle.kts")
 
 plugins {
     id("org.jetbrains.dokka") version "1.4.32"
