@@ -224,6 +224,25 @@ public abstract class PluginBuilder<PluginConfig : Any> internal constructor(
         }
     }
 
+    public fun <ContextT : PluginAnchorContext> beforeAnchor(
+        anchor: PluginAnchor<ContextT>,
+        build: ContextT.() -> Unit
+    ) {
+        when (anchor) {
+            is PluginAnchor.OnCallPluginAnchor -> {
+                pipelineHandlers.add {
+                    BeforeAnchorBuilder(this, anchor).anchorContext.build()
+                }
+            }
+            is PluginAnchor.OnCallResondPluginAnchor -> TODO()
+            is PluginAnchor.OnCallReceivePluginAnchor -> TODO()
+        }
+    }
+
+    public fun afterAnchor(anchor: PluginAnchor, build: AfterAnchorBuilder.() -> Unit) {
+
+    }
+
     override fun applicationShutdownHook(hook: (Application) -> Unit) {
         environment?.monitor?.subscribe(ApplicationStopped) { app ->
             hook(app)
