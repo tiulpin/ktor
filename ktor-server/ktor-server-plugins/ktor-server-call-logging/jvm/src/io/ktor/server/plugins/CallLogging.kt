@@ -93,7 +93,7 @@ public class CallLogging private constructor(
 
         private fun colored(status: HttpStatusCode): String {
             try {
-                if (!AnsiConsole.isInstalled()) {
+                if (isColorsEnabled && !AnsiConsole.isInstalled()) {
                     AnsiConsole.systemInstall()
                 }
             } catch (cause: Throwable) {
