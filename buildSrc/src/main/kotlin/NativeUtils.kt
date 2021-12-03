@@ -40,27 +40,3 @@ fun KotlinMultiplatformExtension.desktopTargets(): Set<KotlinNativeTarget> = set
     linuxX64(),
     mingwX64()
 )
-
-fun Project.disableCompilation(target: KotlinNativeTarget) {
-    target.apply {
-
-        compilations.forEach {
-            it.cinterops.forEach { cInterop ->
-                tasks.getByName(cInterop.interopProcessingTaskName).enabled = false
-            }
-        }
-
-        binaries.forEach {
-            it.linkTask.enabled = false
-        }
-
-        mavenPublication {
-            tasks.withType<AbstractPublishToMaven>().all {
-                onlyIf { publication != this@mavenPublication }
-            }
-            tasks.withType<GenerateModuleMetadata>().all {
-                onlyIf { publication.get() != this@mavenPublication }
-            }
-        }
-    }
-}

@@ -148,10 +148,6 @@ fun Project.configureTargets() {
                 desktopTargets().forEach {
                     getByName("${it.name}Main").dependsOn(desktopMain)
                     getByName("${it.name}Test").dependsOn(desktopTest)
-
-                    if (!it.name.startsWith(HOST_NAME)) {
-                        disableCompilation(it)
-                    }
                 }
             }
         }
