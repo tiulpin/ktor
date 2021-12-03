@@ -56,7 +56,11 @@ fun Project.configurePublication() {
     apply(plugin = "maven-publish")
 
     tasks.withType<AbstractPublishToMaven>().all {
-        onlyIf { isAvailableForPublication(publication) }
+        onlyIf {
+            val availableForPublication = isAvailableForPublication(publication)
+            println("GREP Project $name:${publication.name}: $availableForPublication")
+            availableForPublication
+        }
     }
 
     val publishingUser: String? = System.getenv("PUBLISHING_USER")
