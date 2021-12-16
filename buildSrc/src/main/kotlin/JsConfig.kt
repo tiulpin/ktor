@@ -22,7 +22,6 @@ fun Project.configureJs() {
             val jsTest by getting {
                 dependencies {
                     api("org.jetbrains.kotlin:kotlin-test-js:$kotlin_version")
-                    api(npm("puppeteer", "*"))
                 }
             }
         }

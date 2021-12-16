@@ -22,7 +22,6 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.time.Duration.Companion.seconds
 
-@SharedImmutable
 private val TEST_SELECTOR_MANAGER = SelectorManager()
 
 actual abstract class EngineTestBase<TEngine : ApplicationEngine, TConfiguration : ApplicationEngine.Configuration> actual constructor( // ktlint-disable max-line-length
@@ -32,21 +31,19 @@ actual abstract class EngineTestBase<TEngine : ApplicationEngine, TConfiguration
     actual override val coroutineContext: CoroutineContext = testJob + Dispatchers.Main
 
     @Suppress("DEPRECATION")
-    protected val exceptions = sharedList<Throwable>()
+    protected val exceptions = mutableListOf<Throwable>()
 
     @Target(AnnotationTarget.FUNCTION)
     @Retention
     protected actual annotation class Http2Only actual constructor()
 
-    protected actual var port: Int by shared(
-        aSocket(TEST_SELECTOR_MANAGER).tcp().bind().use {
-            val inetAddress = it.localAddress as? InetSocketAddress ?: error("Expected inet socket address")
-            inetAddress.port
-        }
-    )
+    protected actual var port: Int = aSocket(TEST_SELECTOR_MANAGER).tcp().bind().use {
+        val inetAddress = it.localAddress as? InetSocketAddress ?: error("Expected inet socket address")
+        inetAddress.port
+    }
 
-    protected actual var sslPort: Int by shared(0)
-    protected actual var server: TEngine? by shared(null)
+    protected actual var sslPort: Int = 0
+    protected actual var server: TEngine? = null
 
     protected actual var enableHttp2: Boolean = false
     protected actual var enableSsl: Boolean = false

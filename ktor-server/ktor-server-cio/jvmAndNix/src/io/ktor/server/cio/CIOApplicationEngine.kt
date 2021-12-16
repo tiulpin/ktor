@@ -12,6 +12,7 @@ import io.ktor.server.engine.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.concurrent.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
 /**
@@ -34,7 +35,7 @@ public class CIOApplicationEngine(
         public var connectionIdleTimeoutSeconds: Int = 45
     }
 
-    private val configuration: Configuration by shared(Configuration().apply(configure))
+    private val configuration: Configuration = Configuration().apply(configure)
 
     @OptIn(InternalCoroutinesApi::class)
     private val engineDispatcher = Dispatchers.IOBridge
@@ -45,7 +46,7 @@ public class CIOApplicationEngine(
     private val startupJob: CompletableDeferred<Unit> = CompletableDeferred()
     private val stopRequest: CompletableJob = Job()
 
-    private var serverJob: Job by shared(Job())
+    private var serverJob: Job by atomic(Job())
 
     init {
         serverJob = initServerJob()
