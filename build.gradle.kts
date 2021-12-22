@@ -3,7 +3,6 @@
  */
 
 import org.jetbrains.dokka.gradle.*
-import org.jetbrains.kotlin.konan.target.*
 
 buildscript {
     /*
@@ -70,6 +69,7 @@ val releaseVersion: String? by extra
 val eapVersion: String? by extra
 val native_targets_enabled: Boolean by extra
 val version = (project.version as String).dropLast("-SNAPSHOT".length)
+val codestyleEnabled = project.hasProperty("enableCodeStyle")
 
 extra["configuredVersion"] = when {
     releaseVersion != null -> releaseVersion
@@ -86,8 +86,8 @@ val configuredVersion: String by extra
 
 apply(from = "gradle/verifier.gradle")
 
-extra["skipPublish"] = mutableListOf<String>()
-extra["nonDefaultProjectStructure"] = mutableListOf("ktor-bom")
+extra["skipPublish"] = mutableSetOf<String>()
+extra["nonDefaultProjectStructure"] = mutableSetOf("ktor-bom")
 
 val disabledExplicitApiModeProjects = listOf(
     "ktor-client-tests",
@@ -104,10 +104,13 @@ plugins {
     id("org.jetbrains.dokka") version "1.6.0"
 }
 
+val nonDefaultProjectStructure: Set<String> by rootProject.extra
+val skipPublish: Set<String> by rootProject.extra
+val shouldPublish = gradle.startParameter.taskNames.any { it.contains("publish") }
+
 allprojects {
     group = "io.ktor"
     version = configuredVersion
-    extra["hostManager"] = HostManager()
 
     setupTrainForSubproject()
 
@@ -120,11 +123,11 @@ allprojects {
 
     CacheRedirector.configure(this)
 
-    val nonDefaultProjectStructure: List<String> by rootProject.extra
     if (nonDefaultProjectStructure.contains(project.name)) return@allprojects
 
     apply(plugin = "kotlin-multiplatform")
     apply(plugin = "kotlinx-atomicfu")
+    apply(plugin = "org.jetbrains.dokka")
 
     configureTargets()
 
@@ -134,7 +137,6 @@ allprojects {
 
     kotlin {
         targets.all {
-
             if (this is org.jetbrains.kotlin.gradle.targets.js.KotlinJsTarget) {
                 irTarget?.compilations?.all {
                     configureCompilation()
@@ -149,43 +151,27 @@ allprojects {
             explicitApi()
         }
 
-        sourceSets
-            .matching { it.name !in listOf("main", "test") }
-            .all {
-                val srcDir = if (name.endsWith("Main")) "src" else "test"
-                val resourcesPrefix = if (name.endsWith("Test")) "test-" else ""
-                val platform = name.dropLast(4)
+        sourceSets.matching { it.name !in listOf("main", "test") }.all {
+            val srcDir = if (name.endsWith("Main")) "src" else "test"
+            val resourcesPrefix = if (name.endsWith("Test")) "test-" else ""
+            val platform = name.dropLast(4)
 
-                kotlin.srcDir("$platform/$srcDir")
-                resources.srcDir("$platform/${resourcesPrefix}resources")
+            kotlin.srcDir("$platform/$srcDir")
+            resources.srcDir("$platform/${resourcesPrefix}resources")
 
-                languageSettings.apply {
-                    progressiveMode = true
-                }
+            languageSettings.apply {
+                progressiveMode = true
             }
+        }
     }
 
-    val skipPublish: List<String> by rootProject.extra
-    if (!skipPublish.contains(project.name)) {
+    if (shouldPublish && !skipPublish.contains(project.name)) {
         configurePublication()
     }
-}
 
-if (project.hasProperty("enableCodeStyle")) {
-    subprojects {
+    if (codestyleEnabled) {
         configureCodestyle()
     }
-}
-
-println("Using Kotlin compiler version: ${org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION}")
-filterSnapshotTests()
-
-if (project.hasProperty("enable-coverage")) {
-    apply(from = "gradle/jacoco.gradle")
-}
-
-subprojects {
-    plugins.apply("org.jetbrains.dokka")
 
     tasks.withType<DokkaTaskPartial> {
         dokkaSourceSets.configureEach {
@@ -194,6 +180,13 @@ subprojects {
             }
         }
     }
+}
+
+val build_snapshot_train: Boolean by extra
+
+if (build_snapshot_train) {
+    println("Using Kotlin compiler version: ${org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION}")
+    filterSnapshotTests()
 }
 
 val docs: String? by extra

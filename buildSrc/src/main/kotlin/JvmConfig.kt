@@ -85,7 +85,7 @@ fun Project.configureJvm() {
         exclude("**/*StressTest *")
     }
 
-    tasks.create<Test>("stressTest") {
+    tasks.register<Test>("stressTest") {
         classpath = files(jvmTest.classpath)
         testClassesDirs = files(jvmTest.testClassesDirs)
 

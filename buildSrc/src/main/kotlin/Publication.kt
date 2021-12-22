@@ -65,7 +65,7 @@ fun Project.configurePublication() {
 
     val publishLocal: Boolean by rootProject.extra
     val globalM2: String by rootProject.extra
-    val nonDefaultProjectStructure: List<String> by rootProject.extra
+    val nonDefaultProjectStructure: Set<String> by rootProject.extra
 
     val emptyJar = tasks.register<Jar>("emptyJar") {
         archiveAppendix.set("empty")
