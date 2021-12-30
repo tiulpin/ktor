@@ -78,4 +78,6 @@ internal class DarwinClientEngine(override val config: DarwinClientEngineConfig)
             throw cause
         }
     }
+
+    override fun toString(): String = "Darwin"
 }

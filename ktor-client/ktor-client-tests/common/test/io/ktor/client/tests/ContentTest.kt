@@ -17,6 +17,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.*
 import kotlin.test.*
 
 class ContentTest : ClientLoader() {
@@ -215,6 +216,27 @@ class ContentTest : ClientLoader() {
             }.body<String>()
 
             assertEquals("", response)
+        }
+    }
+
+    @Serializable
+    data class Request(val name: String, val number: Int)
+
+    @Test
+    fun testJsonPost() = clientTests {
+        config {
+            install(ContentNegotiation) { json() }
+        }
+
+        test { client ->
+            val response = client.post("$TEST_SERVER/echo") {
+                headers {
+                    contentType(ContentType.Application.Json)
+                }
+                setBody(Request("hello", 42))
+            }.body<String>()
+
+            assertEquals("{\"name\":\"hello\",\"number\":42}", response)
         }
     }
 
