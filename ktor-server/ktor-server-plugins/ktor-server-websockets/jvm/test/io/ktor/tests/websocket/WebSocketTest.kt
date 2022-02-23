@@ -4,11 +4,14 @@
 
 package io.ktor.tests.websocket
 
+import io.ktor.client.plugins.websocket.*
+import io.ktor.client.request.*
 import io.ktor.serialization.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.server.websocket.*
+import io.ktor.server.websocket.WebSockets
 import io.ktor.util.*
 import io.ktor.util.reflect.*
 import io.ktor.utils.io.*
@@ -662,6 +665,38 @@ class WebSocketTest {
         }
         runBlocking {
             session.await()
+        }
+    }
+
+    @Test
+    fun testSendWithoutReceive() = testApplication {
+        val receivedMessages = mutableListOf<String>()
+        application {
+            install(WebSockets)
+
+            routing {
+                webSocket {
+                    for (message in incoming) {
+                        check(message is Frame.Text)
+                        receivedMessages.add(message.readText())
+                    }
+                }
+            }
+        }
+
+        val client = client.config {
+            install(io.ktor.client.plugins.websocket.WebSockets)
+        }
+
+        client.ws("ws://localhost/") {
+            repeat(5) {
+                send("Hello $it")
+            }
+        }
+
+        assertEquals(5, receivedMessages.size)
+        receivedMessages.forEachIndexed { index, message ->
+            assertEquals("Hello $index", message)
         }
     }
 
