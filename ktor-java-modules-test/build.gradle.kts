@@ -30,6 +30,10 @@ val compileJava = tasks.getByName<JavaCompile>("compileJava") {
         classpath = files()
     }
 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 dependencies {
     rootProject.subprojects
